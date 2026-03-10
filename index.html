@@ -1,0 +1,3340 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Трекер достижений на каждый день: отмечайте привычки и дни, ведите здоровый образ жизни и дисциплину.">
+  <meta name="theme-color" content="#000000">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="LevelUp">
+  <title>LevelUp — Трекер достижений</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="icon-512.png" type="image/png">
+  <link rel="apple-touch-icon" href="icon-512.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
+  <style>
+    :root {
+      --bg: #0a0a0a;
+      --card: #1a1a1c;
+      --card-hover: #2a2a2c;
+      --text: #ffffff;
+      --text-muted: rgba(255, 255, 255, 0.6);
+      --lime: #c4ff0d;
+      --lime-dark: #a8d90a;
+      --accent: #30d158;
+      --accent-soft: #34c759;
+      --accent-light: rgba(48, 209, 88, 0.18);
+      --accent-pale: rgba(48, 209, 88, 0.12);
+      --chart-green: #30d158;
+      --chart-blue: #0a84ff;
+      --chart-orange: #ff9f0a;
+      --chart-teal: #64d2ff;
+      --chart-purple: #bf5af2;
+      --chart-bg: #1c1c1e;
+      --border: rgba(255, 255, 255, 0.1);
+      --shadow: transparent;
+      --radius: 14px;
+      --radius-sm: 10px;
+      --nav-height: 72px;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .auth-screen {
+      max-width: 480px;
+      margin: 0 auto;
+      padding: 2rem 1.5rem;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+    
+    .app-screen {
+      max-width: 480px;
+      margin: 0 auto;
+      padding: 1.5rem;
+      padding-bottom: 6rem;
+      min-height: 100vh;
+    }
+    @media (min-width: 768px) {
+      .auth-screen { max-width: 420px; padding: 2.5rem; }
+      .app-screen { max-width: 720px; padding: 2rem 2.5rem; padding-top: 2.5rem; }
+      .progress-circles { grid-template-columns: repeat(4, 1fr); }
+      .daily-chart-wrap { height: 220px; }
+      .card { padding: 1.75rem; }
+      .calendar-day { font-size: 0.9rem; }
+    }
+    /* ========== ПК: широкая трёхколоночная раскладка ========== */
+    @media (min-width: 1024px) {
+      .auth-screen { max-width: 440px; }
+      .app-screen {
+        width: 100%;
+        max-width: min(1600px, 94vw);
+        margin: 0 auto;
+        padding: 0 2.5rem 3rem;
+        min-height: 100vh;
+        display: grid;
+        grid-template-columns: 1fr 1.4fr 1fr;
+        grid-template-rows: auto 1fr auto auto;
+        gap: 0 2rem;
+        align-items: start;
+      }
+      .app-screen .header-row {
+        grid-column: 1 / -1;
+        margin-bottom: 0;
+        padding: 1.25rem 0 1.5rem;
+        border-bottom: 1px solid var(--border);
+        background: var(--bg);
+      }
+      .app-screen .user-name { font-size: 1.15rem; font-weight: 600; }
+      .app-screen .btn-logout {
+        padding: 0.6rem 1.4rem;
+        font-size: 0.95rem;
+        border-radius: 10px;
+      }
+      /* Левая колонка: Привычки */
+      .app-screen .card.card-right {
+        grid-column: 1;
+        grid-row: 2;
+      }
+      /* Центр: Серия и прогресс */
+      .app-screen .card:not(.card-right):not(.card-tasks):not(.card-calendar) {
+        grid-column: 2;
+        grid-row: 2;
+        min-height: 0;
+      }
+      .app-screen .card:not(.card-right):not(.card-tasks):not(.card-calendar) .progress-circles {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1.25rem;
+      }
+      /* Правая колонка: Текущие задачи */
+      .app-screen .card.card-tasks {
+        grid-column: 3;
+        grid-row: 2;
+      }
+      .app-screen .card.card-calendar {
+        grid-column: 1 / -1;
+        grid-row: 3;
+      }
+      .app-screen > p:last-of-type { grid-column: 1 / -1; grid-row: 4; margin-top: 1rem; }
+      /* Карточки: крупнее и читабельнее на ПК */
+      .app-screen .card {
+        padding: 2rem 2.25rem;
+        margin-bottom: 0;
+        border-radius: 16px;
+        box-shadow: none;
+        border: 1px solid var(--border);
+      }
+      .app-screen .card h2 {
+        font-size: 1.25rem;
+        margin-bottom: 1rem;
+        font-weight: 600;
+        letter-spacing: -0.02em;
+      }
+      .app-screen .card.card-right .day-achievement-block { margin-top: 0; padding-top: 0; border-top: none; }
+      .app-screen .card.card-right .habits-progress,
+      .app-screen .card.card-right .top-habits { margin-top: 1.75rem; }
+      .app-screen .card.card-right .habits-progress h3,
+      .app-screen .card.card-right .top-habits h3 {
+        font-size: 1.05rem;
+        font-weight: 600;
+        margin-bottom: 0.9rem;
+      }
+      .daily-chart-wrap {
+        height: 280px;
+        padding: 24px;
+        border-radius: 14px;
+      }
+      .chart-card { margin-top: 1.5rem; }
+      .chart-card h3 {
+        font-size: 1.1rem;
+        font-weight: 600;
+        margin-bottom: 0.9rem;
+      }
+      .chart-card .month-stats { font-size: 0.9rem; opacity: 0.9; }
+      .progress-circles { gap: 1.25rem; }
+      .app-screen .card:not(.card-right):not(.card-tasks):not(.card-calendar) .weekly-progress-card {
+        padding: 1.5rem 1.75rem;
+      }
+      .app-screen .card:not(.card-right):not(.card-tasks):not(.card-calendar) .weekly-progress-card .value { font-size: 1.9rem; }
+      .progress-circle-wrap {
+        padding: 1.35rem 1rem;
+        border-radius: 14px;
+      }
+      .progress-circle-wrap .label { font-size: 0.7rem; letter-spacing: 0.04em; }
+      .progress-circle-wrap .value { font-size: 1.8rem; font-weight: 700; }
+      .circle-svg { width: 72px; height: 72px; }
+      .calendar-days { gap: 12px; }
+      .calendar-day { font-size: 1.05rem; border-radius: 12px; }
+      .calendar-grid { margin-bottom: 0.75rem; }
+      .task-item {
+        padding: 1.15rem 1.4rem;
+        border-radius: 12px;
+        margin-bottom: 0.65rem;
+      }
+      .add-task-row { gap: 0.85rem; }
+      .add-task-row input { font-size: 1.05rem; padding: 0.9rem 1.1rem; border-radius: 12px; }
+      .app-screen .card.card-tasks .today-badge { font-size: 0.95rem; margin-bottom: 0.4rem; }
+      .app-screen .card.card-tasks .stats-row { margin-bottom: 1rem; font-size: 1rem; }
+      .top-habit-row { margin-bottom: 0.75rem; }
+      .top-habit-row .name { min-width: 9rem; font-size: 0.95rem; }
+      .habit-row { margin-bottom: 0.85rem; }
+      .habit-bar-wrap { flex: 0 0 100px; height: 8px; border-radius: 4px; }
+      .month-nav span { font-size: 1.2rem; font-weight: 600; }
+      .month-nav button { width: 44px; height: 44px; font-size: 1.3rem; border-radius: 12px; }
+      .btn-mark-day { border-radius: 12px; padding: 1rem; font-size: 1rem; }
+    }
+    @media (min-width: 1440px) {
+      .app-screen {
+        max-width: min(1720px, 92vw);
+        padding: 0 3.5rem 3.5rem;
+        gap: 0 2.5rem;
+      }
+      .app-screen .card { padding: 2.25rem 2.5rem; }
+      .app-screen .card h2 { font-size: 1.3rem; }
+    }
+
+    @media (max-width: 1023px) {
+      .app-screen { max-width: 560px; justify-content: flex-start; padding-top: 2.5rem; padding-bottom: 1.5rem; width: 100%; padding-left: 1.5rem; padding-right: 1.5rem; }
+    }
+
+    .hidden { display: none !important; }
+
+    h1 {
+      font-size: 1.75rem;
+      color: var(--text);
+      margin-bottom: 0.5rem;
+      font-weight: 700;
+    }
+
+    .subtitle {
+      color: var(--text-muted);
+      font-size: 0.95rem;
+      margin-bottom: 2rem;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.5rem;
+      margin-bottom: 1.25rem;
+      box-shadow: none;
+    }
+
+    .card h2 {
+      font-size: 1.1rem;
+      font-weight: 600;
+      margin-bottom: 1rem;
+      color: var(--text);
+    }
+
+    label {
+      display: block;
+      font-size: 0.9rem;
+      font-weight: 500;
+      color: var(--text);
+      margin-bottom: 0.35rem;
+    }
+
+    input[type="text"], input[type="password"] {
+      width: 100%;
+      padding: 0.75rem 1rem;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      font-family: inherit;
+      font-size: 1rem;
+      background: var(--card-hover);
+      color: var(--text);
+      margin-bottom: 1rem;
+    }
+
+    input:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 1px var(--accent);
+    }
+
+    .btn {
+      display: inline-block;
+      width: 100%;
+      padding: 0.85rem 1.25rem;
+      border: none;
+      border-radius: var(--radius-sm);
+      font-family: inherit;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.15s, box-shadow 0.15s;
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: #fff;
+      margin-top: 0.25rem;
+    }
+
+    .btn-primary:hover {
+      background: var(--accent-soft);
+    }
+
+    .btn-secondary {
+      background: var(--accent-light);
+      color: var(--accent);
+      margin-top: 0.75rem;
+    }
+
+    .btn-secondary:hover {
+      background: rgba(48, 209, 88, 0.25);
+    }
+
+    .tabs {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .tab {
+      flex: 1;
+      padding: 0.7rem;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      background: var(--card);
+      font-family: inherit;
+      font-size: 0.95rem;
+      font-weight: 500;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .tab.active {
+      background: var(--accent);
+      color: #000;
+      border-color: var(--accent);
+    }
+
+    .tab:hover:not(.active) {
+      background: var(--card-hover);
+      color: var(--text);
+    }
+
+    /* Header */
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.5rem;
+      animation: fadeIn 0.5s ease;
+    }
+    
+    .header-profile {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+    
+    .avatar {
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--lime), var(--green));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 1.3rem;
+      color: #000;
+      transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      cursor: pointer;
+    }
+    
+    .avatar:hover {
+      transform: scale(1.15) rotate(8deg);
+    }
+    
+    .greeting {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+    
+    .username {
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: var(--text);
+    }
+    
+    .header-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: var(--card);
+      border: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.3rem;
+      cursor: pointer;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    
+    .header-icon:hover {
+      background: var(--card-hover);
+      transform: scale(1.15);
+      border-color: var(--lime);
+    }
+
+    .add-task-row {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .add-task-row input {
+      flex: 1;
+      margin-bottom: 0;
+    }
+
+    .btn-add {
+      width: auto;
+      padding: 0.75rem 1.25rem;
+      flex-shrink: 0;
+    }
+
+    .task-list {
+      list-style: none;
+    }
+
+    /* Tasks Section */
+    .tasks-section {
+      animation: slideUp 1s ease;
+    }
+    
+    .section-title {
+      font-size: 1.3rem;
+      font-weight: 700;
+      margin-bottom: 1rem;
+      color: var(--text);
+    }
+    
+    .add-task-inline {
+      margin-bottom: 1rem;
+    }
+    
+    .add-task-inline input {
+      width: 100%;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 1rem 1.25rem;
+      font-size: 1rem;
+      color: var(--text);
+      font-family: inherit;
+      transition: all 0.3s ease;
+    }
+    
+    .add-task-inline input:focus {
+      outline: none;
+      border-color: var(--lime);
+      box-shadow: 0 0 0 3px rgba(196, 255, 13, 0.2);
+    }
+    
+    .task-item-new {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 1rem 1.25rem;
+      margin-bottom: 0.75rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      cursor: pointer;
+      position: relative;
+    }
+    
+    .task-item-new:hover {
+      transform: translateX(8px);
+      border-color: var(--lime);
+      background: var(--card-hover);
+    }
+    
+    .task-checkbox-new {
+      width: 28px;
+      height: 28px;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.3s ease;
+      flex-shrink: 0;
+    }
+    
+    .task-item-new:hover .task-checkbox-new {
+      border-color: var(--lime);
+      transform: scale(1.1);
+    }
+    
+    .task-item-new.done .task-checkbox-new {
+      background: var(--lime);
+      border-color: var(--lime);
+    }
+    
+    .task-checkbox-new::after {
+      content: '✓';
+      color: #000;
+      font-weight: 700;
+      font-size: 0.9rem;
+      opacity: 0;
+      transform: scale(0);
+      transition: all 0.3s ease;
+    }
+    
+    .task-item-new.done .task-checkbox-new::after {
+      opacity: 1;
+      transform: scale(1);
+    }
+    
+    .task-content-new {
+      flex: 1;
+    }
+    
+    .task-name-new {
+      font-size: 1rem;
+      font-weight: 600;
+      margin-bottom: 0.25rem;
+      color: var(--text);
+    }
+    
+    .task-item-new.done .task-name-new {
+      text-decoration: line-through;
+      opacity: 0.5;
+    }
+    
+    .task-time-new {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+    
+    .task-delete-new {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      padding: 0.25rem;
+      font-size: 1.2rem;
+      opacity: 0;
+      transition: all 0.2s ease;
+    }
+    
+    .task-item-new:hover .task-delete-new {
+      opacity: 1;
+    }
+    
+    .task-delete-new:hover {
+      color: var(--red);
+      transform: scale(1.2);
+    }
+
+    .day-achievement-block {
+      margin-top: 1rem;
+      padding-top: 1rem;
+      border-top: 1px solid var(--border);
+    }
+    .card-right .day-achievement-block { border-top: none; }
+    .card-right .day-achievement-block:first-child { margin-top: 0; padding-top: 0; }
+
+    .day-achievement-block p {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      margin-bottom: 0.75rem;
+    }
+
+    .btn-mark-day {
+      width: 100%;
+      padding: 0.75rem;
+      font-size: 0.95rem;
+    }
+
+    .btn-mark-day:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .month-nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1rem;
+    }
+
+    .month-nav span {
+      font-weight: 600;
+      font-size: 1.1rem;
+    }
+
+    .month-nav-buttons {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .month-nav button {
+      background: var(--card-hover);
+      border: 1px solid var(--border);
+      color: var(--text);
+      width: 36px;
+      height: 36px;
+      border-radius: var(--radius-sm);
+      font-size: 1.2rem;
+      cursor: pointer;
+    }
+
+    .month-nav button:hover {
+      background: var(--accent-light);
+      color: var(--accent);
+    }
+
+    .calendar-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 4px;
+      margin-bottom: 0.5rem;
+    }
+
+    .calendar-weekday {
+      text-align: center;
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      padding: 0.35rem 0;
+    }
+
+    .calendar-days {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 4px;
+    }
+
+    .calendar-day {
+      position: relative;
+      aspect-ratio: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.85rem;
+      border-radius: 6px;
+      background: var(--card-hover);
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+    }
+
+    .calendar-day.other-month {
+      opacity: 0.4;
+    }
+
+    .calendar-day.today {
+      border-color: var(--accent);
+      color: var(--accent);
+      font-weight: 600;
+    }
+
+    .calendar-day.achievement {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+    }
+
+    .calendar-day.achievement::after {
+      content: '✓';
+      position: absolute;
+      bottom: 2px;
+      right: 3px;
+      font-size: 0.65rem;
+      font-weight: bold;
+    }
+
+    .calendar-day .day-num { position: relative; z-index: 1; }
+    .calendar-day.achievement .day-num { position: relative; z-index: 1; }
+
+    .error-msg {
+      background: rgba(180, 60, 60, 0.2);
+      color: #f88;
+      padding: 0.6rem 1rem;
+      border-radius: var(--radius-sm);
+      font-size: 0.9rem;
+      margin-bottom: 1rem;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 2rem 1rem;
+      color: var(--text-muted);
+      font-size: 0.95rem;
+    }
+
+    .empty-state p { margin-bottom: 0.5rem; }
+
+    .today-badge {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      font-weight: 500;
+      margin-bottom: 0.5rem;
+    }
+
+    .month-stats {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      margin-bottom: 1rem;
+    }
+
+    .month-stats strong { color: var(--accent); }
+
+    .month-nav .btn-today {
+      font-size: 0.8rem;
+      padding: 0.4rem 0.75rem;
+      width: auto;
+      margin-top: -0.1px
+    }
+
+    .quick-add {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .quick-add-btn {
+      padding: 0.4rem 0.75rem;
+      font-size: 0.85rem;
+      width: auto;
+      border-radius: 20px;
+      background: var(--card-hover);
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+    }
+
+    .quick-add-btn:hover {
+      border-color: var(--border);
+      color: var(--text);
+      background: var(--card-hover);
+    }
+
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      margin-top: 1rem;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .legend-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 3px;
+    }
+
+    .legend-dot.today { border: 2px solid var(--accent); background: var(--card); }
+    .legend-dot.achievement { background: var(--accent); border: none; }
+
+    .dashboard-intro {
+      margin-bottom: 1.5rem;
+    }
+    .dashboard-intro h3 { font-size: 1rem; margin-bottom: 0.35rem; color: var(--text); }
+    .dashboard-intro p { font-size: 0.9rem; color: var(--text-muted); }
+
+    /* Date Pills */
+    .date-pills {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1.5rem;
+      overflow-x: auto;
+      padding-bottom: 0.5rem;
+      padding-top: 0.5rem;
+      animation: slideUp 0.6s ease;
+    }
+    
+    .date-pills::-webkit-scrollbar { display: none; }
+    
+    .date-pill {
+      min-width: 56px;
+      height: 64px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 0.25rem;
+      cursor: pointer;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      flex-shrink: 0;
+    }
+    
+    .date-pill:hover {
+      transform: translateY(-2px);
+      border-color: var(--lime);
+      box-shadow: 0 8px 20px rgba(196, 255, 13, 0.2);
+    }
+    
+    .date-pill.active {
+      background: var(--lime);
+      color: #000;
+      transform: scale(1.05);
+      border-color: var(--lime);
+    }
+    
+    .date-pill .day { font-size: 1.2rem; font-weight: 700; }
+    .date-pill .weekday { font-size: 0.75rem; opacity: 0.7; font-weight: 600; }
+    
+    /* Calories Card */
+    .calories-card {
+      background: var(--lime);
+      color: #000;
+      border-radius: 24px;
+      padding: 1.75rem;
+      position: relative;
+      overflow: hidden;
+      margin-bottom: 1.5rem;
+      animation: slideUp 0.8s ease;
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    
+    .calories-card:hover {
+      transform: scale(1.02) rotate(-1deg);
+      box-shadow: 0 20px 60px rgba(196, 255, 13, 0.4);
+    }
+    
+    .calories-card .card-label {
+      font-size: 0.9rem;
+      font-weight: 600;
+      opacity: 0.7;
+      margin-bottom: 0.5rem;
+    }
+    
+    .calories-value {
+      font-size: 3.5rem;
+      font-weight: 800;
+      display: flex;
+      align-items: baseline;
+      gap: 0.5rem;
+      margin-bottom: 0.75rem;
+      line-height: 1;
+      color: #000;
+      position: relative;
+      z-index: 1;
+    }
+    
+    .calories-value .unit {
+      font-size: 1rem;
+      font-weight: 600;
+      opacity: 0.85;
+      color: #000;
+    }
+    
+    .card-subtitle {
+      font-size: 0.9rem;
+      opacity: 0.9;
+      font-weight: 500;
+      color: #000;
+      position: relative;
+      z-index: 1;
+    }
+    
+    .progress-ring-main {
+      position: absolute;
+      right: 1.5rem;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 100px;
+      height: 100px;
+      z-index: 0;
+      pointer-events: none;
+    }
+    
+    .progress-ring-main circle {
+      fill: none;
+      stroke-width: 8;
+      transform: rotate(-90deg);
+      transform-origin: center;
+      transition: stroke-dashoffset 1s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    
+    .progress-ring-main .ring-bg { stroke: rgba(0,0,0,0.15); }
+    .progress-ring-main .ring-fill { stroke: #000000; stroke-linecap: round; stroke-width: 10; }
+    
+    .calories-card:hover .progress-ring-main {
+      animation: pulse 1s infinite;
+    }
+
+    /* Activity Grid */
+    .activity-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.75rem;
+      margin-bottom: 1.5rem;
+      animation: slideUp 0.9s ease;
+    }
+    
+    /* На телефоне — одна колонка, аккуратный вертикальный блок */
+    @media (max-width: 600px) {
+      .activity-grid {
+        grid-template-columns: 1fr;
+        gap: 1.25rem;
+        margin-bottom: 1.5rem;
+      }
+      .activity-card-new {
+        padding: 1.5rem 1.35rem;
+        display: block;
+        text-align: center;
+      }
+      .activity-card-new .activity-icon-new {
+        width: 52px;
+        height: 52px;
+        font-size: 1.6rem;
+        margin: 0 auto 0.6rem;
+      }
+      .activity-card-new .activity-title-new {
+        font-size: 0.95rem;
+        margin-bottom: 0.35rem;
+        display: block;
+      }
+      .activity-card-new .activity-value-new {
+        font-size: 1.75rem;
+        font-weight: 700;
+        display: block;
+        margin-bottom: 0;
+      }
+      .activity-card-new .activity-card-actions {
+        margin-top: 0.85rem;
+        display: flex;
+        gap: 0.6rem;
+        justify-content: center;
+        flex-wrap: wrap;
+      }
+      .activity-btn-small {
+        padding: 0.55rem 0.9rem;
+        font-size: 0.85rem;
+      }
+      .activity-btn-pedometer {
+        min-width: 10rem;
+      }
+      .activity-btn-edit {
+        min-width: 2.75rem;
+        height: 2.25rem;
+        padding: 0.4rem !important;
+        font-size: 1rem !important;
+      }
+      .activity-card-new .pedometer-hint,
+      .activity-card-new .pedometer-status {
+        font-size: 0.82rem;
+        margin-top: 0.85rem;
+        text-align: center;
+        line-height: 1.5;
+        max-width: 20em;
+        margin-left: auto;
+        margin-right: auto;
+      }
+      .activity-card-new .pedometer-status {
+        margin-top: 0.4rem;
+      }
+    }
+    
+    .activity-card-new {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 1.25rem 1rem;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+      text-align: center;
+    }
+    
+    .activity-card-new::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, transparent, rgba(196, 255, 13, 0.1));
+      opacity: 0;
+      transition: opacity 0.3s ease;
+      pointer-events: none;
+    }
+    
+    .activity-card-new:hover {
+      transform: translateY(-6px) scale(1.02);
+      border-color: var(--lime);
+      box-shadow: 0 12px 30px rgba(0,0,0,0.3);
+    }
+    
+    .activity-card-new:hover::after {
+      opacity: 1;
+    }
+    
+    .activity-icon-new {
+      width: 48px;
+      height: 48px;
+      border-radius: 12px;
+      background: rgba(255,255,255,0.1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      margin: 0 auto 0.75rem;
+      transition: all 0.3s ease;
+    }
+    
+    .activity-card-new:hover .activity-icon-new {
+      transform: scale(1.15) rotate(10deg);
+      background: var(--lime);
+    }
+    
+    .activity-title-new {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin-bottom: 0.4rem;
+      font-weight: 500;
+    }
+    
+    .activity-value-new {
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: var(--text);
+      min-height: 1.5em;
+      visibility: visible;
+    }
+    
+    .activity-btn-small {
+      margin-top: 0.5rem;
+      font-size: 0.7rem;
+      padding: 0.3rem 0.6rem;
+      border-radius: 8px;
+      border: none;
+      background: rgba(255,255,255,0.1);
+      color: var(--text-muted);
+      cursor: pointer;
+      font-family: inherit;
+      transition: all 0.2s ease;
+    }
+    
+    .activity-btn-small:hover {
+      background: var(--lime);
+      color: #000;
+    }
+
+    .activity-card-actions {
+      display: flex;
+      gap: 0.5rem;
+      margin-top: 0.75rem;
+      justify-content: center;
+      align-items: center;
+      flex-wrap: wrap;
+      position: relative;
+      z-index: 1;
+    }
+
+    .activity-btn-pedometer {
+      min-width: 8rem;
+      cursor: pointer;
+    }
+    .activity-btn-edit {
+      min-width: 2.5rem;
+      padding: 0.35rem !important;
+      font-size: 0.9rem !important;
+    }
+
+    .pedometer-hint,
+    .pedometer-status {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin-top: 0.75rem;
+      text-align: center;
+      line-height: 1.5;
+      margin-bottom: 0;
+      max-width: 22em;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    .pedometer-status { margin-top: 0.4rem; }
+    #steps-card .activity-value-new { margin-bottom: 0.15rem; }
+    .activity-title-new,
+    .activity-value-new { display: block; }
+
+    .modal-overlay {
+      position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.7);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 200;
+    }
+    .modal-content {
+      background: var(--card);
+      border: 1px solid var(--border);
+      padding: 1.5rem;
+      border-radius: 14px;
+      max-width: 320px;
+      width: 90%;
+      position: relative;
+    }
+    .modal-content h3 { margin-bottom: 1rem; font-size: 1.1rem; }
+    .modal-content input { width: 100%; margin-bottom: 1rem; }
+    .modal-buttons { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+    .modal-close {
+      position: absolute;
+      top: 0.75rem;
+      right: 0.75rem;
+      background: none;
+      border: none;
+      font-size: 1.5rem;
+      color: var(--text-muted);
+      cursor: pointer;
+    }
+
+    .streak-block {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1rem 1.25rem;
+      background: var(--card-hover);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      margin-bottom: 1rem;
+    }
+    .streak-block .label { font-size: 0.9rem; color: var(--text-muted); }
+    .streak-block .value {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--chart-orange);
+    }
+    .streak-block .value span { font-size: 1rem; font-weight: 500; color: var(--text-muted); }
+
+    .progress-circles {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+    .progress-circle-wrap {
+      background: var(--card-hover);
+      border-radius: var(--radius-sm);
+      padding: 1rem;
+      text-align: center;
+      border: 1px solid var(--border);
+      box-shadow: none;
+    }
+    .progress-circle-wrap .label {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      margin-bottom: 0.5rem;
+    }
+    .progress-circle-wrap .value {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--chart-green);
+    }
+    .progress-circle-wrap.momentum .value { color: var(--chart-blue); }
+    .progress-circle-wrap.weekly .value { color: var(--chart-green); }
+    .progress-circle-wrap.monthly .value { color: var(--chart-green); }
+    .circle-svg {
+      width: 64px;
+      height: 64px;
+      margin: 0 auto 0.5rem;
+      display: block;
+    }
+    .circle-svg circle { fill: none; stroke-width: 6; }
+    .circle-svg .bg { stroke: var(--border); }
+    .circle-svg .fill { stroke: var(--chart-green); stroke-linecap: round; transform: rotate(-90deg); transform-origin: center; }
+    .circle-svg.momentum .fill { stroke: var(--chart-blue); }
+    .circle-svg.weekly .fill { stroke: var(--chart-green); }
+    .circle-svg.monthly .fill { stroke: var(--chart-green); }
+
+    .chart-card { margin-top: 0.5rem; }
+    .chart-card h3 { font-size: 0.95rem; margin-bottom: 0.75rem; color: var(--text); text-align: center; }
+    .daily-chart-wrap {
+      height: 200px;
+      margin-bottom: 0.5rem;
+      position: relative;
+      background: var(--card-hover);
+      border-radius: var(--radius-sm);
+      padding: 16px;
+      border: 1px solid var(--border);
+    }
+    .daily-chart-wrap canvas {
+      display: block;
+      width: 100% !important;
+      height: 100% !important;
+    }
+
+    .stats-row {
+      display: flex;
+      gap: 1rem;
+      margin-bottom: 1rem;
+      font-size: 0.9rem;
+    }
+    .stats-row span { color: var(--text-muted); }
+    .stats-row strong { color: var(--chart-green); }
+
+    .habits-progress { margin-top: 1rem; }
+    .habits-progress h3 { font-size: 0.95rem; margin-bottom: 0.75rem; color: var(--text); }
+    .habit-row {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 0.6rem;
+      font-size: 0.9rem;
+    }
+    .habit-row .name { flex: 1; color: var(--text); }
+    .habit-row .pct { color: var(--text-muted); min-width: 2.5rem; }
+    .habit-bar-wrap {
+      flex: 0 0 80px;
+      height: 6px;
+      background: var(--border);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+    .habit-bar { height: 100%; background: var(--chart-green); border-radius: 3px; transition: width 0.2s; }
+
+    .top-habits { margin-top: 1rem; }
+    .top-habits h3 { font-size: 0.95rem; margin-bottom: 0.75rem; color: var(--text); }
+    .top-habit-row {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 0.5rem;
+      font-size: 0.85rem;
+    }
+    .top-habit-row .name { width: 5rem; color: var(--text); }
+    .top-habit-row .bar-wrap { flex: 1; height: 8px; background: var(--border); border-radius: 4px; overflow: hidden; }
+    .top-habit-row .bar { height: 100%; border-radius: 4px; transition: width 0.2s; }
+    .top-habit-row .pct { min-width: 2.5rem; color: var(--text-muted); font-size: 0.8rem; }
+
+    .heatmap-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 3px;
+      margin-top: 0.75rem;
+    }
+    .heatmap-cell {
+      aspect-ratio: 1;
+      border-radius: 4px;
+      background: var(--border);
+      transition: background 0.2s;
+    }
+    .heatmap-cell.filled { background: var(--accent); }
+    .heatmap-cell.today { box-shadow: 0 0 0 2px var(--chart-blue); }
+    
+    /* Animations */
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    
+    @keyframes slideUp {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    
+    @keyframes pulse {
+      0%, 100% { transform: translateY(-50%) scale(1); }
+      50% { transform: translateY(-50%) scale(1.05); }
+    }
+    
+    @keyframes shimmer {
+      0% { background-position: -200% 0; }
+      100% { background-position: 200% 0; }
+    }
+    
+    /* Calendar Styles */
+    .calendar-day {
+      aspect-ratio: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+    }
+    
+    .calendar-day:hover {
+      transform: scale(1.1);
+      border-color: var(--lime);
+      z-index: 1;
+    }
+    
+    .calendar-day.today {
+      border-color: var(--chart-blue);
+      box-shadow: 0 0 0 2px var(--chart-blue);
+    }
+    
+    .calendar-day.achievement {
+      background: var(--lime);
+      color: #000;
+      border-color: var(--lime);
+    }
+    
+    .calendar-day.achievement:hover {
+      transform: scale(1.15) rotate(5deg);
+    }
+    
+    .calendar-day.other-month {
+      opacity: 0.3;
+      pointer-events: none;
+    }
+    
+    .calendar-day.empty {
+      background: transparent;
+      border: none;
+      pointer-events: none;
+    }
+    
+    .calendar-day.missed {
+      background: var(--card-hover);
+      border-color: rgba(255, 255, 255, 0.05);
+      opacity: 0.5;
+    }
+    
+    .month-nav button:hover {
+      background: var(--card-hover);
+      border-color: var(--lime);
+      transform: scale(1.1);
+    }
+    
+    .btn-mark-day:not(:disabled) {
+      background: var(--lime);
+      color: #000;
+      cursor: pointer;
+      border-color: var(--lime);
+    }
+    
+    .btn-mark-day:not(:disabled):hover {
+      transform: scale(1.02);
+      box-shadow: 0 8px 20px rgba(196, 255, 13, 0.3);
+    }
+    
+    /* Quick Add Buttons */
+    .quick-add-btn {
+      padding: 0.5rem 1rem;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      color: var(--text);
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      font-family: inherit;
+    }
+    
+    .quick-add-btn:hover {
+      background: var(--lime);
+      color: #000;
+      border-color: var(--lime);
+      transform: translateY(-2px);
+    }
+
+    .run-stat { background: var(--card-hover); padding: 0.6rem 1rem; border-radius: 10px; border: 1px solid var(--border); }
+    .run-stat-label { display: block; font-size: 0.75rem; color: var(--text-muted); }
+    .run-stat-value { font-size: 1.25rem; font-weight: 700; color: var(--lime); }
+    .territory-run-card .btn-primary { background: var(--lime); color: #000; border-color: var(--lime); }
+    .ranking-row { display: flex; align-items: center; gap: 0.75rem; padding: 0.6rem 1rem; background: var(--card-hover); border-radius: 10px; border: 1px solid var(--border); }
+    .ranking-row .rank { font-weight: 700; color: var(--text-muted); min-width: 1.5rem; }
+    .ranking-row .name { flex: 1; font-weight: 600; }
+    .ranking-row .value { font-size: 0.9rem; color: var(--lime); }
+    .my-location-marker { background: none !important; border: none !important; }
+
+    /* Нижняя навигация и страницы */
+    .app-content { padding-bottom: 100px; }
+    .app-page { display: none; min-height: 40vh; }
+    .app-page.active { display: block; }
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: min(100%, 480px);
+      max-width: calc(100vw - 2rem);
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-bottom: none;
+      border-radius: 20px 20px 0 0;
+      padding: 10px 12px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
+      box-shadow: 0 -4px 20px rgba(0,0,0,0.25);
+      z-index: 100;
+    }
+    .bottom-nav-item {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      padding: 8px 4px;
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-size: 0.7rem;
+      font-family: inherit;
+      transition: color 0.2s, transform 0.2s;
+      border-radius: 12px;
+    }
+    .bottom-nav-item:hover { color: var(--text); }
+    .bottom-nav-item svg { width: 22px; height: 22px; opacity: 0.9; }
+    .bottom-nav-item.active { color: var(--lime); }
+    .bottom-nav-item.active svg { opacity: 1; }
+    .nav-go-wrap { flex-shrink: 0; margin-left: 4px; }
+    .nav-go-btn {
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      background: var(--lime);
+      color: #000;
+      border: 2px solid var(--border);
+      font-weight: 800;
+      font-size: 0.8rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+      font-family: inherit;
+      box-shadow: 0 2px 12px rgba(196, 255, 13, 0.35);
+    }
+    .nav-go-btn:hover { transform: scale(1.06); box-shadow: 0 4px 16px rgba(196, 255, 13, 0.45); border-color: var(--lime); }
+    .rating-block { margin-bottom: 1.5rem; }
+    .rating-block h3 { font-size: 1rem; margin-bottom: 0.75rem; color: var(--text); }
+    .my-route-item { padding: 0.75rem 1rem; background: var(--card-hover); border-radius: 12px; border: 1px solid var(--border); margin-bottom: 0.5rem; display: flex; justify-content: space-between; align-items: center; }
+  </style>
+</head>
+<body>
+  <div id="auth-screen" class="auth-screen">
+    <h1>Трекер достижений</h1>
+    <p class="subtitle">Здоровый образ жизни и дисциплина каждый день</p>
+    <div class="card">
+      <div class="tabs">
+        <button type="button" class="tab active" data-tab="login">Вход</button>
+        <button type="button" class="tab" data-tab="register">Регистрация</button>
+      </div>
+      <div id="auth-error" class="error-msg hidden" role="alert"></div>
+      <form id="form-login">
+        <label for="login-username">Имя пользователя</label>
+        <input type="text" id="login-username" required autocomplete="username">
+        <label for="login-password">Пароль</label>
+        <input type="password" id="login-password" required autocomplete="current-password">
+        <button type="submit" class="btn btn-primary">Войти</button>
+        <p style="margin-top:1rem;font-size:0.85rem;color:var(--text-muted);text-align:center;">💾 Все данные сохраняются на вашем устройстве</p>
+      </form>
+      <form id="form-register" class="hidden">
+        <label for="reg-username">Имя пользователя</label>
+        <input type="text" id="reg-username" required autocomplete="username">
+        <label for="reg-password">Пароль</label>
+        <input type="password" id="reg-password" required autocomplete="new-password">
+        <button type="submit" class="btn btn-primary">Зарегистрироваться</button>
+        <p style="margin-top:1rem;font-size:0.85rem;color:var(--text-muted);text-align:center;">✅ Аккаунт сохранится и вы сможете войти позже</p>
+      </form>
+    </div>
+  </div>
+
+  <div id="app-screen" class="app-screen hidden">
+    <div class="app-content">
+    <!-- Страница: Главная (карта, бег, задачи) -->
+    <div id="page-home" class="app-page active">
+    <!-- Header -->
+    <div class="header">
+      <div class="header-profile">
+        <div class="avatar" id="header-avatar">?</div>
+        <div>
+          <div class="greeting" id="header-greeting">Доброе утро!</div>
+          <div class="username"><span id="current-username">Готовы к тренировке?</span></div>
+        </div>
+      </div>
+      <button type="button" class="header-icon" id="btn-logout" aria-label="Выйти">⚙️</button>
+    </div>
+    
+    <!-- Date Pills -->
+    <div class="date-pills" id="date-pills"></div>
+    
+    <!-- Main Calories Card -->
+    <div class="calories-card">
+      <div class="card-label">Отчет</div>
+      <div class="calories-value">
+        <span id="streak-value-num">0</span>
+        <span class="unit">дней подряд</span>
+      </div>
+      <div class="card-subtitle" id="tasks-summary">Выполнено задач: 0 из 0</div>
+      <svg class="progress-ring-main" viewBox="0 0 100 100">
+        <circle class="ring-bg" cx="50" cy="50" r="42"/>
+        <circle class="ring-fill" id="main-progress-circle" cx="50" cy="50" r="42"/>
+      </svg>
+    </div>
+    
+    <!-- Activity Cards Grid -->
+    <div class="activity-grid">
+      <div class="activity-card-new" id="steps-card">
+        <div class="activity-icon-new">👟</div>
+        <div class="activity-title-new">Шаги</div>
+        <div class="activity-value-new" id="activity-steps">—</div>
+        <div class="activity-card-actions">
+          <button type="button" class="activity-btn-small activity-btn-pedometer" id="btn-enable-pedometer">Включить шагомер</button>
+        </div>
+        <p id="pedometer-status" class="pedometer-status hidden"></p>
+      </div>
+      <div class="activity-card-new">
+        <div class="activity-icon-new">⏱️</div>
+        <div class="activity-title-new">Momentum</div>
+        <div class="activity-value-new" id="momentum-value">0%</div>
+      </div>
+      <div class="activity-card-new">
+        <div class="activity-icon-new">🔥</div>
+        <div class="activity-title-new">Серия</div>
+        <div class="activity-value-new" id="streak-mini">0</div>
+      </div>
+    </div>
+    
+    <!-- Tasks Section -->
+    <div class="tasks-section">
+      <h2 class="section-title">Активности</h2>
+      <p class="today-badge" id="today-badge" style="font-size:0.9rem;color:var(--text-muted);margin-bottom:1rem;"></p>
+      <div class="stats-row" style="display:flex;gap:1rem;margin-bottom:1rem;font-size:0.9rem;">
+        <span style="color:var(--text-muted);">Сделано: <strong id="stat-done" style="color:var(--lime);">0</strong></span>
+        <span style="color:var(--text-muted);">Осталось: <strong id="stat-left" style="color:var(--text);">0</strong></span>
+      </div>
+      <div class="quick-add" id="quick-add" style="display:flex;flex-wrap:wrap;gap:0.5rem;margin-bottom:1rem;"></div>
+      <div class="add-task-inline">
+        <input type="text" id="new-task" placeholder="+ Добавить активность" maxlength="80">
+      </div>
+      <div id="task-list-new"></div>
+    </div>
+
+    <!-- Calendar Section -->
+    <div class="calendar-section" style="margin-top:2rem;animation:slideUp 1.1s ease;">
+      <h2 class="section-title">Достижения за месяц</h2>
+      <div class="month-nav" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
+        <button type="button" id="month-prev" style="background:var(--card);border:1px solid var(--border);width:40px;height:40px;border-radius:50%;color:var(--text);cursor:pointer;font-size:1.2rem;transition:all 0.3s ease;" aria-label="Предыдущий месяц">‹</button>
+        <span id="month-title" style="font-size:1.1rem;font-weight:600;">Март 2026</span>
+        <div style="display:flex;gap:0.5rem;align-items:center;">
+          <button type="button" class="btn btn-secondary btn-today" id="month-today" style="padding:0.5rem 1rem;font-size:0.85rem;background:var(--card);border:1px solid var(--border);border-radius:10px;color:var(--text);cursor:pointer;">Сегодня</button>
+          <button type="button" id="month-next" style="background:var(--card);border:1px solid var(--border);width:40px;height:40px;border-radius:50%;color:var(--text);cursor:pointer;font-size:1.2rem;transition:all 0.3s ease;" aria-label="Следующий месяц">›</button>
+        </div>
+      </div>
+      <p class="month-stats" id="month-stats" style="font-size:0.9rem;color:var(--text-muted);margin-bottom:1rem;"></p>
+      <div class="calendar-grid" style="display:grid;grid-template-columns:repeat(7,1fr);gap:0.5rem;margin-bottom:0.5rem;text-align:center;">
+        <span class="calendar-weekday" style="font-size:0.75rem;color:var(--text-muted);font-weight:600;">Пн</span>
+        <span class="calendar-weekday" style="font-size:0.75rem;color:var(--text-muted);font-weight:600;">Вт</span>
+        <span class="calendar-weekday" style="font-size:0.75rem;color:var(--text-muted);font-weight:600;">Ср</span>
+        <span class="calendar-weekday" style="font-size:0.75rem;color:var(--text-muted);font-weight:600;">Чт</span>
+        <span class="calendar-weekday" style="font-size:0.75rem;color:var(--text-muted);font-weight:600;">Пт</span>
+        <span class="calendar-weekday" style="font-size:0.75rem;color:var(--text-muted);font-weight:600;">Сб</span>
+        <span class="calendar-weekday" style="font-size:0.75rem;color:var(--text-muted);font-weight:600;">Вс</span>
+      </div>
+      <div class="calendar-days" id="calendar-days" style="display:grid;grid-template-columns:repeat(7,1fr);gap:0.5rem;"></div>
+      <div class="legend" style="display:flex;gap:1rem;margin-top:1rem;font-size:0.85rem;color:var(--text-muted);justify-content:center;flex-wrap:wrap;">
+        <span class="legend-item"><span class="legend-dot today" style="display:inline-block;width:12px;height:12px;border-radius:50%;background:var(--chart-blue);margin-right:0.3rem;"></span> сегодня</span>
+        <span class="legend-item"><span class="legend-dot achievement" style="display:inline-block;width:12px;height:12px;border-radius:50%;background:var(--lime);margin-right:0.3rem;"></span> достижение</span>
+        <span class="legend-item"><span class="legend-dot missed" style="display:inline-block;width:12px;height:12px;border-radius:50%;background:var(--card-hover);opacity:0.5;margin-right:0.3rem;"></span> пропущен</span>
+      </div>
+      <div class="day-achievement-block" style="margin-top:1.5rem;padding:1.25rem;background:var(--card);border:1px solid var(--border);border-radius:16px;">
+        <p id="day-status-text" style="margin-bottom:1rem;color:var(--text-muted);font-size:0.9rem;">Нажмите кнопку, когда день прошёл удачно — он засчитается в достижениях.</p>
+        <button type="button" class="btn btn-secondary" id="btn-mark-all-tasks" style="width:100%;padding:0.85rem;background:var(--lime);border:1px solid var(--lime);border-radius:12px;color:#000;font-family:inherit;font-size:1rem;transition:all 0.3s ease;margin-bottom:0.75rem;">Отметить все задачи ✓</button>
+        <button type="button" class="btn btn-secondary btn-mark-day" id="btn-mark-day" style="width:100%;padding:0.85rem;background:var(--lime);border:1px solid var(--lime);border-radius:12px;color:#000;cursor:pointer;font-family:inherit;font-size:1rem;transition:all 0.3s ease;">Отметить день</button>
+      </div>
+    </div>
+    </div>
+    <!-- Конец page-home -->
+
+    <!-- Страница: Рейтинги (по разным категориям) -->
+    <div id="page-stats" class="app-page">
+      <div class="header">
+        <div class="header-profile">
+          <div class="avatar" id="header-avatar-stats">?</div>
+          <div><div class="greeting">Рейтинги</div><div class="username">Кто бегает и захватывает дороги</div></div>
+        </div>
+      </div>
+      <p style="font-size:0.9rem;color:var(--text-muted);margin-bottom:1rem;">Участники с захваченными территориями — только те, кто уже бегал.</p>
+      <div class="rating-block">
+        <h3>🏆 Больше всего дорог</h3>
+        <div id="ranking-roads" class="ranking-list" style="display:flex;flex-direction:column;gap:0.5rem;"></div>
+      </div>
+      <div class="rating-block">
+        <h3>👑 Король района</h3>
+        <p style="font-size:0.9rem;color:var(--text-muted);margin-bottom:0.5rem;">Топ по владению территориями</p>
+        <div id="ranking-king" class="ranking-list" style="display:flex;flex-direction:column;gap:0.5rem;"></div>
+      </div>
+      <div class="rating-block">
+        <h3>🔥 Самый активный бегун</h3>
+        <p style="font-size:0.9rem;color:var(--text-muted);margin-bottom:0.5rem;">По суммарной длине маршрутов</p>
+        <div id="ranking-active" class="ranking-list" style="display:flex;flex-direction:column;gap:0.5rem;"></div>
+      </div>
+      <div class="rating-block">
+        <h3>📏 Самый длинный маршрут</h3>
+        <p style="font-size:0.9rem;color:var(--text-muted);margin-bottom:0.5rem;">Один участок — кто владеет рекордом</p>
+        <div id="ranking-longest" class="ranking-list" style="display:flex;flex-direction:column;gap:0.5rem;"></div>
+      </div>
+    </div>
+
+    <!-- Страница: Бег -->
+    <div id="page-run" class="app-page">
+      <div class="header">
+        <div class="header-profile">
+          <div class="avatar" id="header-avatar-run">?</div>
+          <div><div class="greeting">Бег</div><div class="username">Захват территорий</div></div>
+        </div>
+      </div>
+      <!-- Карта территорий (мои + моё местоположение) -->
+      <div class="card territory-map-card" style="margin-bottom:1.25rem;">
+        <h2 class="section-title">🗺️ Мои территории</h2>
+        <p class="territory-hint" style="font-size:0.9rem;color:var(--text-muted);margin-bottom:1rem;">Ваши захваченные дороги и текущее местоположение. Защищайте территорию, пробегая по ней раз в неделю.</p>
+        <div id="territory-map" style="height:280px;border-radius:12px;background:var(--card-hover);border:1px solid var(--border);"></div>
+        <div id="territory-legend" style="display:flex;flex-wrap:wrap;gap:0.75rem;margin-top:0.75rem;font-size:0.8rem;color:var(--text-muted);"></div>
+      </div>
+      <div class="card territory-run-card" style="margin-bottom:1.25rem;">
+        <h2 class="section-title">🏃 Бег и территории</h2>
+        <p class="territory-hint" style="font-size:0.9rem;color:var(--text-muted);margin-bottom:1rem;">Запустите бег — маршрут запишется по GPS. После пробежки дорога станет вашей территорией. Другие могут перехватить её, пробежав по ней.</p>
+        <div id="run-panel-idle">
+          <button type="button" class="btn btn-primary" id="btn-start-run" style="width:100%;padding:1rem;">Начать пробежку</button>
+        </div>
+        <div id="run-panel-active" class="hidden">
+          <div class="run-stats-row" style="display:flex;gap:1rem;margin-bottom:1rem;flex-wrap:wrap;">
+            <div class="run-stat"><span class="run-stat-label">Время</span><span class="run-stat-value" id="run-timer">0:00</span></div>
+            <div class="run-stat"><span class="run-stat-label">Расстояние</span><span class="run-stat-value" id="run-distance">0 м</span></div>
+          </div>
+          <p id="run-gps-status" style="font-size:0.85rem;color:var(--text-muted);margin-bottom:0.75rem;">Ожидание GPS…</p>
+          <button type="button" class="btn btn-secondary" id="btn-stop-run" style="width:100%;background:var(--chart-orange);color:#000;border-color:var(--chart-orange);">Завершить пробежку</button>
+        </div>
+        <div id="run-result-panel" class="hidden" style="margin-top:1rem;padding:1rem;background:var(--card-hover);border-radius:12px;border:1px solid var(--border);">
+          <p id="run-result-text" style="margin-bottom:0.5rem;font-weight:600;"></p>
+          <p id="run-result-detail" style="font-size:0.9rem;color:var(--text-muted);"></p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Страница: Прогресс -->
+    <div id="page-activity" class="app-page">
+      <div class="header">
+        <div class="header-profile">
+          <div class="avatar" id="header-avatar-activity">?</div>
+          <div><div class="greeting">Прогресс</div><div class="username">Серия и достижения</div></div>
+        </div>
+      </div>
+      <div class="card" style="margin-bottom:1.25rem;">
+        <h2 class="section-title">Серия дней</h2>
+        <div class="streak-block"><span class="label">Текущая серия</span><span class="value" id="page-activity-streak">0</span> <span>дней</span></div>
+      </div>
+      <div class="card">
+        <h2 class="section-title">Достижения за месяц</h2>
+        <div class="month-nav" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
+          <button type="button" id="month-prev-activity" style="background:var(--card);border:1px solid var(--border);width:40px;height:40px;border-radius:50%;color:var(--text);cursor:pointer;font-size:1.2rem;">‹</button>
+          <span id="month-title-activity" style="font-size:1.1rem;font-weight:600;"></span>
+          <button type="button" id="month-next-activity" style="background:var(--card);border:1px solid var(--border);width:40px;height:40px;border-radius:50%;color:var(--text);cursor:pointer;font-size:1.2rem;">›</button>
+        </div>
+        <div class="calendar-days" id="calendar-days-activity" style="display:grid;grid-template-columns:repeat(7,1fr);gap:0.5rem;"></div>
+      </div>
+    </div>
+
+    </div>
+    <!-- Нижняя навигация -->
+    <nav class="bottom-nav" aria-label="Основное меню">
+      <button type="button" class="bottom-nav-item active" data-page="home" aria-label="Главная">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+        <span>Главная</span>
+      </button>
+      <button type="button" class="bottom-nav-item" data-page="stats" aria-label="Рейтинги">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 17v-4h4v4H3zm6 0v-6h4v6H9zm6 0V7h4v10h-4z"/></svg>
+        <span>Рейтинг</span>
+      </button>
+      <button type="button" class="bottom-nav-item" data-page="run" aria-label="Бег">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="4" r="2"/><path d="M8 21v-2l2-4 2 2 2-4 2 2v2"/><path d="M8 15l2-2 2 2 2-2"/><path d="M12 8v4"/></svg>
+        <span>Бег</span>
+      </button>
+      <button type="button" class="bottom-nav-item" data-page="activity" aria-label="Прогресс">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 17v-4h4v4H3zm6-4v-4h4v4H9zm6 0V7h4v10h-4z"/></svg>
+        <span>Прогресс</span>
+      </button>
+      <div class="nav-go-wrap">
+        <button type="button" class="nav-go-btn" id="nav-go-btn" aria-label="Начать пробежку">GO!</button>
+      </div>
+    </nav>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+  <script>
+    (function() {
+      const DB_NAME = 'LevelUpTracker';
+      const DB_VERSION = 1;
+      const STORE = 'kv';
+
+      const weekdays = ['Пн','Вт','Ср','Чт','Пт','Сб','Вс'];
+      const months = ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
+      const monthsShort = ['янв','фев','мар','апр','май','июн','июл','авг','сен','окт','ноя','дек'];
+      const DEFAULT_TASKS = ['Пробежка или ходьба', 'Вода 1,5–2 л', 'Зарядка 10 мин', 'Сон до 23:00', 'Чтение 20 мин'];
+
+      var db = null;
+      var cache = { users: {}, userData: {}, currentUser: null, territories: [] };
+
+      function openDB() {
+        return new Promise(function(resolve, reject) {
+          var req = indexedDB.open(DB_NAME, DB_VERSION);
+          req.onerror = function() { reject(req.error); };
+          req.onsuccess = function() { db = req.result; resolve(db); };
+          req.onupgradeneeded = function(e) {
+            if (!e.target.result.objectStoreNames.contains(STORE)) {
+              e.target.result.createObjectStore(STORE);
+            }
+          };
+        });
+      }
+
+      function idbGet(key) {
+        return new Promise(function(resolve, reject) {
+          if (!db) { resolve(null); return; }
+          var tx = db.transaction(STORE, 'readonly');
+          var req = tx.objectStore(STORE).get(key);
+          req.onsuccess = function() { resolve(req.result); };
+          req.onerror = function() { reject(req.error); };
+        });
+      }
+
+      function idbSet(key, val) {
+        return new Promise(function(resolve, reject) {
+          if (!db) { resolve(); return; }
+          var tx = db.transaction(STORE, 'readwrite');
+          var req = tx.objectStore(STORE).put(val, key);
+          req.onsuccess = function() { resolve(); };
+          req.onerror = function() { reject(req.error); };
+        });
+      }
+
+      function migrateFromLocalStorage() {
+        try {
+          var rawU = localStorage.getItem('tracker_users');
+          var rawD = localStorage.getItem('tracker_data');
+          var rawC = localStorage.getItem('tracker_current_user');
+          if (rawU) cache.users = JSON.parse(rawU);
+          if (rawD) cache.userData = JSON.parse(rawD);
+          if (rawC) cache.currentUser = rawC;
+        } catch (e) {}
+      }
+
+      function initStorage() {
+        return openDB()
+          .then(function() {
+            return Promise.all([
+              idbGet('users'),
+              idbGet('userData'),
+              idbGet('currentUser'),
+              idbGet('territories')
+            ]);
+          })
+          .then(function(vals) {
+            if (vals[0]) cache.users = vals[0];
+            if (vals[1]) cache.userData = vals[1];
+            if (vals[2]) cache.currentUser = vals[2];
+            if (vals[3] && Array.isArray(vals[3])) cache.territories = vals[3];
+            if (Object.keys(cache.users).length === 0 && Object.keys(cache.userData).length === 0) {
+              migrateFromLocalStorage();
+              return persistAll();
+            }
+            return Promise.resolve();
+          })
+          .catch(function() {
+            migrateFromLocalStorage();
+          });
+      }
+
+      function persistAll() {
+        return Promise.all([
+          idbSet('users', cache.users),
+          idbSet('userData', cache.userData),
+          idbSet('currentUser', cache.currentUser),
+          idbSet('territories', cache.territories || [])
+        ]).catch(function() {});
+      }
+
+      function getTerritories() {
+        return cache.territories || [];
+      }
+      function setTerritories(arr) {
+        cache.territories = arr;
+        idbSet('territories', arr).catch(function() {});
+      }
+      var TERRITORY_DECAY_DAYS = 7;
+      function isTerritoryWeak(territory) {
+        if (!territory.lastDefendedAt) return true;
+        var d = new Date(territory.lastDefendedAt);
+        return (Date.now() - d.getTime()) / (24 * 60 * 60 * 1000) > TERRITORY_DECAY_DAYS;
+      }
+      function haversineMeters(lat1, lon1, lat2, lon2) {
+        var R = 6371000;
+        var dLat = (lat2 - lat1) * Math.PI / 180;
+        var dLon = (lon2 - lon1) * Math.PI / 180;
+        var a = Math.sin(dLat/2)*Math.sin(dLat/2) + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)*Math.sin(dLon/2);
+        var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+        return R * c;
+      }
+      function pointToSegmentDistance(px, py, x1, y1, x2, y2) {
+        var A = px - x1, B = py - y1, C = x2 - x1, D = y2 - y1;
+        var dot = A*C + B*D;
+        var lenSq = C*C + D*D;
+        var param = lenSq !== 0 ? Math.max(0, Math.min(1, dot / lenSq)) : 0;
+        var projX = x1 + param * C, projY = y1 + param * D;
+        return Math.sqrt((px - projX)*(px - projX) + (py - projY)*(py - projY));
+      }
+      function simplifyPoints(points, toleranceM) {
+        if (points.length <= 2) return points.slice();
+        var out = [points[0]];
+        for (var i = 1; i < points.length - 1; i++) {
+          var prev = points[i-1], cur = points[i], next = points[i+1];
+          var dist = haversineMeters(prev[0], prev[1], cur[0], cur[1]);
+          if (dist >= toleranceM) out.push(cur);
+        }
+        out.push(points[points.length - 1]);
+        return out;
+      }
+      function routeLengthMeters(points) {
+        var len = 0;
+        for (var i = 1; i < points.length; i++)
+          len += haversineMeters(points[i-1][0], points[i-1][1], points[i][0], points[i][1]);
+        return len;
+      }
+      function overlapScore(runPoints, territoryPoints, maxDistM) {
+        if (territoryPoints.length < 2 || runPoints.length < 2) return 0;
+        var hits = 0;
+        for (var t = 0; t < territoryPoints.length; t++) {
+          var tx = territoryPoints[t][0], ty = territoryPoints[t][1];
+          for (var r = 0; r < runPoints.length - 1; r++) {
+            var d = haversineMeters(tx, ty, runPoints[r][0], runPoints[r][1]);
+            if (d <= maxDistM) { hits++; break; }
+          }
+        }
+        return hits / territoryPoints.length;
+      }
+      function runOverlapsTerritory(runPoints, territory, maxDistM, minOverlap) {
+        var score = overlapScore(runPoints, territory.points, maxDistM);
+        return score >= minOverlap;
+      }
+      function captureRoadFromRun(runPoints, username) {
+        runPoints = simplifyPoints(runPoints, 15);
+        if (runPoints.length < 2) return { captured: [], takenOver: [] };
+        var territories = getTerritories();
+        var maxDistM = 25, minOverlap = 0.5;
+        var takenOver = [];
+        var used = {};
+        for (var i = 0; i < territories.length; i++) {
+          if (runOverlapsTerritory(runPoints, territories[i], maxDistM, minOverlap)) {
+            territories[i].owner = username;
+            territories[i].lastDefendedAt = new Date().toISOString();
+            territories[i].capturedAt = new Date().toISOString();
+            takenOver.push(territories[i]);
+            used[i] = true;
+          }
+        }
+        var lengthM = routeLengthMeters(runPoints);
+        var newId = 't_' + Date.now() + '_' + Math.random().toString(36).slice(2, 9);
+        var newTerritory = {
+          id: newId,
+          points: runPoints,
+          owner: username,
+          capturedAt: new Date().toISOString(),
+          lastDefendedAt: new Date().toISOString(),
+          lengthMeters: lengthM
+        };
+        var alreadyCovered = takenOver.some(function(t) {
+          return runOverlapsTerritory(t.points, newTerritory, maxDistM, 0.7);
+        });
+        var captured = [];
+        if (!alreadyCovered && lengthM >= 100) {
+          territories.push(newTerritory);
+          captured.push(newTerritory);
+        }
+        setTerritories(territories);
+        return { captured: captured, takenOver: takenOver };
+      }
+      function getTerritoryColor(username) {
+        var colors = ['#c4ff0d', '#30d158', '#0a84ff', '#ff9f0a', '#bf5af2', '#64d2ff', '#ff375f'];
+        var n = 0;
+        for (var i = 0; i < (username || '').length; i++) n += username.charCodeAt(i);
+        return colors[Math.abs(n) % colors.length];
+      }
+
+      function getUsers() {
+        return cache.users || {};
+      }
+
+      function saveUsers(users) {
+        cache.users = users;
+        idbSet('users', users).catch(function() {});
+      }
+
+      function getUserData(username) {
+        var all = cache.userData || {};
+        if (!all[username]) {
+          all[username] = { tasks: [], dailyDone: {}, monthAchievements: {}, dailySteps: {}, lastVisit: todayKey() };
+        }
+        if (!all[username].dailySteps) all[username].dailySteps = {};
+        if (!all[username].monthAchievements) all[username].monthAchievements = {};
+        if (!all[username].lastVisit) all[username].lastVisit = todayKey();
+        return all[username];
+      }
+
+      function getStepsToday() {
+        var user = getCurrentUser();
+        if (!user) return 0;
+        var data = getUserData(user);
+        var today = todayKey();
+        return (data.dailySteps || {})[today] || 0;
+      }
+
+      function setStepsToday(n) {
+        var user = getCurrentUser();
+        if (!user) return;
+        var data = getUserData(user);
+        if (!data.dailySteps) data.dailySteps = {};
+        data.dailySteps[todayKey()] = Math.max(0, parseInt(n, 10) || 0);
+        setUserData(user, data);
+      }
+
+      function setUserData(username, data) {
+        if (!cache.userData) cache.userData = {};
+        cache.userData[username] = data;
+        idbSet('userData', cache.userData).catch(function() {});
+      }
+
+      function getCurrentUser() {
+        return cache.currentUser || null;
+      }
+
+      function setCurrentUser(username) {
+        cache.currentUser = username;
+        idbSet('currentUser', username).catch(function() {});
+      }
+
+      function todayKey() {
+        const d = new Date();
+        return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+      }
+
+      function monthKey(year, month) {
+        return year + '-' + String(month).padStart(2, '0');
+      }
+
+      // --- Auth UI ---
+      const authScreen = document.getElementById('auth-screen');
+      const appScreen = document.getElementById('app-screen');
+      const authError = document.getElementById('auth-error');
+
+      document.querySelectorAll('.tab').forEach(tab => {
+        tab.addEventListener('click', function() {
+          const t = this.dataset.tab;
+          document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+          this.classList.add('active');
+          document.getElementById('form-login').classList.toggle('hidden', t !== 'login');
+          document.getElementById('form-register').classList.toggle('hidden', t !== 'register');
+          authError.classList.add('hidden');
+          authError.style.color = ''; authError.style.background = '';
+        });
+      });
+
+      document.getElementById('form-login').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const username = document.getElementById('login-username').value.trim();
+        const password = document.getElementById('login-password').value;
+        const users = getUsers();
+        if (!users[username] || users[username] !== btoa(encodeURIComponent(password))) {
+          authError.textContent = 'Неверный логин или пароль';
+          authError.style.color = ''; authError.style.background = '';
+          authError.classList.remove('hidden');
+          return;
+        }
+        authError.classList.add('hidden');
+        setCurrentUser(username);
+        showApp();
+      });
+
+      document.getElementById('form-register').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const username = document.getElementById('reg-username').value.trim();
+        const password = document.getElementById('reg-password').value;
+        if (username.length < 2) {
+          authError.textContent = 'Имя пользователя минимум 2 символа';
+          authError.style.color = ''; authError.style.background = '';
+          authError.classList.remove('hidden');
+          return;
+        }
+        if (password.length < 4) {
+          authError.textContent = 'Пароль минимум 4 символа';
+          authError.style.color = ''; authError.style.background = '';
+          authError.classList.remove('hidden');
+          return;
+        }
+        const users = getUsers();
+        if (users[username]) {
+          authError.textContent = 'Такой пользователь уже есть';
+          authError.style.color = ''; authError.style.background = '';
+          authError.classList.remove('hidden');
+          return;
+        }
+        users[username] = btoa(encodeURIComponent(password));
+        saveUsers(users);
+        setUserData(username, { tasks: [], dailyDone: {}, monthAchievements: {}, dailySteps: {}, lastVisit: todayKey() });
+        authError.classList.add('hidden');
+        setCurrentUser(username);
+        showApp();
+      });
+
+      document.getElementById('btn-logout').addEventListener('click', function() {
+        setCurrentUser(null);
+        appScreen.classList.add('hidden');
+        authScreen.classList.remove('hidden');
+        authError.textContent = 'Вы вышли. Данные сохранены на устройстве — войдите снова в любое время.';
+        authError.style.color = 'var(--accent)';
+        authError.style.background = 'var(--accent-light)';
+        authError.classList.remove('hidden');
+      });
+
+      var btnRefresh = document.getElementById('btn-refresh');
+      if (btnRefresh) btnRefresh.addEventListener('click', function() {
+        updateDashboard();
+        loadTasks();
+        renderCalendar();
+      });
+
+
+      function getGreeting() {
+        var h = new Date().getHours();
+        if (h < 12) return 'Доброе утро!';
+        if (h < 18) return 'Добрый день!';
+        return 'Добрый вечер!';
+      }
+
+      function checkNewDay() {
+        const user = getCurrentUser();
+        if (!user) return;
+        const data = getUserData(user);
+        const today = todayKey();
+        
+        if (data.lastVisit && data.lastVisit !== today) {
+          var lastDate = new Date(data.lastVisit);
+          var currentDate = new Date(today);
+          var daysDiff = Math.floor((currentDate - lastDate) / (1000 * 60 * 60 * 24));
+          
+          if (daysDiff > 0) {
+            for (let i = 1; i < daysDiff; i++) {
+              var missedDate = new Date(lastDate);
+              missedDate.setDate(missedDate.getDate() + i);
+              var missedKey = missedDate.getFullYear() + '-' + 
+                String(missedDate.getMonth() + 1).padStart(2, '0') + '-' + 
+                String(missedDate.getDate()).padStart(2, '0');
+              if (!data.dailyDone[missedKey]) {
+                data.dailyDone[missedKey] = [];
+              }
+            }
+          }
+        }
+        
+        data.lastVisit = today;
+        setUserData(user, data);
+      }
+      
+      function showApp() {
+        authScreen.classList.add('hidden');
+        appScreen.classList.remove('hidden');
+        const user = getCurrentUser();
+        checkNewDay();
+        document.getElementById('current-username').textContent = user || 'Готовы к тренировке?';
+        var av = document.getElementById('header-avatar');
+        if (av) av.textContent = (user || '?').charAt(0).toUpperCase();
+        var gr = document.getElementById('header-greeting');
+        if (gr) gr.textContent = getGreeting();
+        
+        setupDayButtons();
+        updateDayAchievementButton();
+        renderDatePills();
+        updateTodayBadge();
+        renderQuickAdd();
+        loadTasks();
+        updateDashboard();
+        updateDayAchievementButton();
+        updateActivityCards();
+        renderCalendar();
+        renderRanking();
+        switchPage('home');
+        renderCalendarActivity();
+        setTimeout(function() {
+          renderCalendar();
+          updateDayAchievementButton();
+        }, 100);
+        setTimeout(function() {
+          renderCalendar();
+          renderCalendarActivity();
+        }, 400);
+      }
+      
+      function renderDatePills() {
+        const container = document.getElementById('date-pills');
+        if (!container) return;
+        container.innerHTML = '';
+        const weekdays = ['Вс', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб'];
+        const today = new Date();
+        
+        for (let i = 0; i <= 6; i++) {
+          const date = new Date(today);
+          date.setDate(today.getDate() + i);
+          const pill = document.createElement('div');
+          pill.className = 'date-pill' + (i === 0 ? ' active' : '');
+          pill.innerHTML = '<div class="day">' + date.getDate() + '</div><div class="weekday">' + weekdays[date.getDay()] + '</div>';
+          pill.addEventListener('click', function() {
+            document.querySelectorAll('.date-pill').forEach(p => p.classList.remove('active'));
+            this.classList.add('active');
+          });
+          container.appendChild(pill);
+        }
+      }
+
+      function updateActivityCards() {
+        var steps = getStepsToday();
+        var stepsEl = document.getElementById('activity-steps');
+        if (stepsEl) {
+          if (steps > 0) {
+            stepsEl.textContent = steps.toLocaleString('ru');
+          } else if (pedometerActive) {
+            stepsEl.textContent = '0';
+          } else {
+            stepsEl.textContent = '—';
+          }
+        }
+        updateStepsButtonsState();
+        
+        const user = getCurrentUser();
+        if (!user) return;
+        const data = getUserData(user);
+        const today = todayKey();
+        const doneToday = data.dailyDone[today] || [];
+        const totalTasks = (data.tasks || []).length;
+        const doneTasks = doneToday.length;
+        
+        var momentumEl = document.getElementById('momentum-value');
+        if (momentumEl && totalTasks > 0) {
+          momentumEl.textContent = Math.round((doneTasks / totalTasks) * 100) + '%';
+        } else if (momentumEl) {
+          momentumEl.textContent = '0%';
+        }
+        
+        var streakMini = document.getElementById('streak-mini');
+        if (streakMini) {
+          streakMini.textContent = calculateStreak();
+        }
+      }
+
+      function updateStepsButtonsState() {
+        var btnEnable = document.getElementById('btn-enable-pedometer');
+        if (btnEnable) {
+          btnEnable.textContent = pedometerActive ? 'Стоп' : 'Включить шагомер';
+          btnEnable.disabled = false;
+        }
+      }
+
+      var pedometerActive = false;
+      var pedometerHandler = null;
+      var pedometerRefreshInterval = null;
+
+      function showPedometerMsg(msg, isError) {
+        var el = document.getElementById('pedometer-status');
+        if (!el) return;
+        el.textContent = msg;
+        el.classList.remove('hidden');
+        el.style.color = isError ? 'var(--chart-orange)' : 'var(--accent)';
+      }
+      function hidePedometerMsg() {
+        var el = document.getElementById('pedometer-status');
+        if (el) { el.textContent = ''; el.classList.add('hidden'); }
+      }
+
+      function startPedometer() {
+        if (pedometerActive) return;
+        hidePedometerMsg();
+        if (typeof DeviceMotionEvent === 'undefined') {
+          showPedometerMsg('Датчик недоступен', true);
+          return;
+        }
+
+        var fast = 9.8, slow = 9.8;
+        var buf = [];
+        var lastStepTime = 0;
+        var BUF_SIZE = 5;
+        var CENTER = 2;
+        var MIN_STEP_MS = 350;
+        var THRESHOLD = 0.12;
+
+        pedometerHandler = function(e) {
+          var a = e.accelerationIncludingGravity || e.acceleration;
+          if (!a || typeof a.x !== 'number') return;
+          var mag = Math.sqrt(a.x * a.x + a.y * a.y + a.z * a.z);
+          fast = 0.7 * fast + 0.3 * mag;
+          slow = 0.94 * slow + 0.06 * mag;
+          var d = fast - slow;
+          var now = Date.now();
+          buf.push(d);
+          if (buf.length > BUF_SIZE) buf.shift();
+          if (buf.length < BUF_SIZE) return;
+          var mid = buf[CENTER];
+          var isPeak = mid >= buf[0] && mid >= buf[1] && mid >= buf[3] && mid >= buf[4];
+          var gap = now - lastStepTime;
+          if (isPeak && Math.abs(mid) > THRESHOLD && gap >= MIN_STEP_MS) {
+            lastStepTime = now;
+            var newCount = getStepsToday() + 1;
+            setStepsToday(newCount);
+            var el = document.getElementById('activity-steps');
+            if (el) el.textContent = newCount.toLocaleString('ru');
+            updateActivityCards();
+          }
+        };
+
+        function doStart() {
+          pedometerActive = true;
+          try {
+            window.addEventListener('devicemotion', pedometerHandler);
+          } catch (err) {
+            pedometerActive = false;
+            updateStepsButtonsState();
+            return;
+          }
+          updateStepsButtonsState();
+          updateActivityCards();
+          if (pedometerRefreshInterval) clearInterval(pedometerRefreshInterval);
+          pedometerRefreshInterval = setInterval(function() {
+            if (!pedometerActive) return;
+            var steps = getStepsToday();
+            var stepsEl = document.getElementById('activity-steps');
+            if (stepsEl) stepsEl.textContent = steps > 0 ? steps.toLocaleString('ru') : '0';
+          }, 1500);
+          showPedometerMsg('Шагомер включён', false);
+          setTimeout(hidePedometerMsg, 3000);
+        }
+
+        if (typeof DeviceMotionEvent.requestPermission === 'function') {
+          showPedometerMsg('Нажмите «Разрешить»', false);
+          DeviceMotionEvent.requestPermission()
+            .then(function(perm) {
+              hidePedometerMsg();
+              doStart();
+            })
+            .catch(function() {
+              hidePedometerMsg();
+              doStart();
+            });
+        } else {
+          doStart();
+        }
+      }
+
+      function stopPedometer() {
+        if (!pedometerActive || !pedometerHandler) return;
+        try {
+          window.removeEventListener('devicemotion', pedometerHandler);
+        } catch (err) {}
+        if (pedometerRefreshInterval) {
+          clearInterval(pedometerRefreshInterval);
+          pedometerRefreshInterval = null;
+        }
+        pedometerActive = false;
+        pedometerHandler = null;
+        hidePedometerMsg();
+        updateStepsButtonsState();
+        updateActivityCards();
+      }
+
+      var btnEnablePedometer = document.getElementById('btn-enable-pedometer');
+      if (btnEnablePedometer) {
+        btnEnablePedometer.addEventListener('click', function() {
+          if (pedometerActive) stopPedometer();
+          else startPedometer();
+        });
+      }
+
+      // --- Режим бега и территории ---
+      var runWatchId = null;
+      var runStartTime = 0;
+      var runPoints = [];
+      var runTimerInterval = null;
+
+      function startRun() {
+        if (runWatchId !== null) return;
+        var user = getCurrentUser();
+        if (!user) {
+          alert('Войдите в аккаунт, чтобы захватывать территории.');
+          return;
+        }
+        if (!navigator.geolocation) {
+          alert('GPS недоступен в этом браузере.');
+          return;
+        }
+        runPoints = [];
+        runStartTime = Date.now();
+        document.getElementById('run-panel-idle').classList.add('hidden');
+        document.getElementById('run-panel-active').classList.remove('hidden');
+        document.getElementById('run-result-panel').classList.add('hidden');
+        document.getElementById('run-timer').textContent = '0:00';
+        document.getElementById('run-distance').textContent = '0 м';
+        document.getElementById('run-gps-status').textContent = 'Ожидание GPS…';
+
+        runWatchId = navigator.geolocation.watchPosition(
+          function(pos) {
+            var lat = pos.coords.latitude;
+            var lon = pos.coords.longitude;
+            runPoints.push([lat, lon]);
+            document.getElementById('run-gps-status').textContent = 'GPS: ' + runPoints.length + ' точек. Точность ~' + (pos.coords.accuracy || 0).toFixed(0) + ' м';
+            var len = routeLengthMeters(runPoints);
+            document.getElementById('run-distance').textContent = (len >= 1000 ? (len / 1000).toFixed(2) + ' км' : Math.round(len) + ' м');
+          },
+          function(err) {
+            document.getElementById('run-gps-status').textContent = 'Ошибка GPS: ' + (err.message || 'доступ запрещён');
+          },
+          { enableHighAccuracy: true, maximumAge: 5000, timeout: 10000 }
+        );
+
+        runTimerInterval = setInterval(function() {
+          var sec = Math.floor((Date.now() - runStartTime) / 1000);
+          var m = Math.floor(sec / 60);
+          var s = sec % 60;
+          document.getElementById('run-timer').textContent = m + ':' + (s < 10 ? '0' : '') + s;
+        }, 1000);
+      }
+
+      function stopRun() {
+        if (runWatchId !== null) {
+          navigator.geolocation.clearWatch(runWatchId);
+          runWatchId = null;
+        }
+        if (runTimerInterval) {
+          clearInterval(runTimerInterval);
+          runTimerInterval = null;
+        }
+        document.getElementById('run-panel-active').classList.add('hidden');
+        document.getElementById('run-panel-idle').classList.remove('hidden');
+
+        var user = getCurrentUser();
+        var resultEl = document.getElementById('run-result-panel');
+        var textEl = document.getElementById('run-result-text');
+        var detailEl = document.getElementById('run-result-detail');
+        resultEl.classList.remove('hidden');
+
+        if (runPoints.length < 5) {
+          textEl.textContent = 'Мало точек GPS. Пробегите больше и попробуйте снова.';
+          detailEl.textContent = '';
+          return;
+        }
+        var result = captureRoadFromRun(runPoints, user);
+        var captured = result.captured || [];
+        var takenOver = result.takenOver || [];
+        if (captured.length > 0 && takenOver.length > 0) {
+          textEl.textContent = 'Захвачено! Новая территория + перехвачено дорог: ' + takenOver.length;
+          detailEl.textContent = 'Новых участков: ' + captured.length + '. Защищено/перехвачено: ' + takenOver.length;
+        } else if (takenOver.length > 0) {
+          textEl.textContent = 'Перехват! Вы забрали ' + takenOver.length + ' дорог.';
+          detailEl.textContent = 'Пробегайте эти участки снова, чтобы удерживать их.';
+        } else if (captured.length > 0) {
+          textEl.textContent = 'Новая территория захвачена!';
+          detailEl.textContent = 'Длина участка: ' + (captured[0].lengthMeters >= 1000 ? (captured[0].lengthMeters / 1000).toFixed(2) + ' км' : Math.round(captured[0].lengthMeters) + ' м');
+        } else {
+          textEl.textContent = 'Маршрут записан.';
+          detailEl.textContent = 'Участок короче 100 м не засчитывается. Пробегите длиннее для захвата.';
+        }
+        renderTerritoryMap();
+        renderRanking();
+      }
+
+      var territoryMapInstance = null;
+      var territoryMapLayers = [];
+      var territoryMapUserMarker = null;
+
+      function renderTerritoryMap() {
+        var container = document.getElementById('territory-map');
+        if (!container) return;
+        var user = getCurrentUser();
+        var territories = getTerritories().filter(function(t) { return t.owner === user; });
+        if (typeof L === 'undefined') return;
+
+        if (!territoryMapInstance) {
+          territoryMapInstance = L.map(container).setView([55.75, 37.62], 13);
+          L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap' }).addTo(territoryMapInstance);
+        }
+        territoryMapLayers.forEach(function(layer) {
+          if (territoryMapInstance && layer) territoryMapInstance.removeLayer(layer);
+        });
+        territoryMapLayers = [];
+        if (territoryMapUserMarker && territoryMapInstance) {
+          territoryMapInstance.removeLayer(territoryMapUserMarker);
+          territoryMapUserMarker = null;
+        }
+
+        var bounds = null;
+        territories.forEach(function(t) {
+          if (!t.points || t.points.length < 2) return;
+          var latlngs = t.points.map(function(p) { return [p[0], p[1]]; });
+          var color = getTerritoryColor(user);
+          var line = L.polyline(latlngs, { color: color, weight: 6, opacity: 0.9 });
+          line.addTo(territoryMapInstance);
+          territoryMapLayers.push(line);
+          latlngs.forEach(function(ll) {
+            if (!bounds) bounds = L.latLngBounds(ll, ll);
+            else bounds.extend(ll);
+          });
+        });
+
+        if (navigator.geolocation) {
+          navigator.geolocation.getCurrentPosition(
+            function(pos) {
+              var lat = pos.coords.latitude;
+              var lng = pos.coords.longitude;
+              if (territoryMapUserMarker && territoryMapInstance) territoryMapInstance.removeLayer(territoryMapUserMarker);
+              var myIcon = L.divIcon({ className: 'my-location-marker', html: '<div style="width:16px;height:16px;background:#c4ff0d;border:3px solid #fff;border-radius:50%;box-shadow:0 0 8px rgba(0,0,0,0.4);"></div>', iconSize: [22, 22], iconAnchor: [11, 11] });
+              territoryMapUserMarker = L.marker([lat, lng], { icon: myIcon }).addTo(territoryMapInstance);
+              territoryMapUserMarker.bindTooltip('Вы здесь', { permanent: false, direction: 'top' });
+              if (bounds) { bounds.extend([lat, lng]); territoryMapInstance.fitBounds(bounds, { padding: [40, 40], maxZoom: 16 }); }
+              else territoryMapInstance.setView([lat, lng], 15);
+            },
+            function() {
+              if (bounds) territoryMapInstance.fitBounds(bounds, { padding: [40, 40], maxZoom: 16 });
+              else territoryMapInstance.setView([55.75, 37.62], 13);
+            }
+          );
+        } else {
+          if (bounds) territoryMapInstance.fitBounds(bounds, { padding: [40, 40], maxZoom: 16 });
+          else territoryMapInstance.setView([55.75, 37.62], 13);
+        }
+
+        var legend = document.getElementById('territory-legend');
+        if (legend) {
+          if (territories.length > 0) {
+            var color = getTerritoryColor(user);
+            legend.innerHTML = '<span style="display:inline-flex;align-items:center;gap:0.35rem;"><span style="width:14px;height:4px;background:' + color + ';border-radius:2px;"></span>Мои дороги</span><span style="display:inline-flex;align-items:center;gap:0.35rem;"><span style="width:10px;height:10px;background:#c4ff0d;border-radius:50%;border:2px solid #fff;"></span>Я здесь</span>';
+          } else {
+            legend.innerHTML = '<span style="display:inline-flex;align-items:center;gap:0.35rem;"><span style="width:10px;height:10px;background:#c4ff0d;border-radius:50%;border:2px solid #fff;"></span>Я здесь (включите GPS)</span>';
+          }
+        }
+      }
+
+      function renderRanking() {
+        renderRankingRoads();
+        renderRankingKing();
+        renderRankingActive();
+        renderRankingLongest();
+      }
+      function fillRankingList(containerId, arr, current, formatValue) {
+        var list = document.getElementById(containerId);
+        if (!list) return;
+        list.innerHTML = '';
+        if (arr.length === 0) {
+          list.innerHTML = '<p style="color:var(--text-muted);font-size:0.9rem;">Пока нет данных.</p>';
+          return;
+        }
+        arr.forEach(function(item, i) {
+          var row = document.createElement('div');
+          row.className = 'ranking-row';
+          var medal = i === 0 ? '👑' : (i === 1 ? '🥈' : (i === 2 ? '🥉' : (i + 1)));
+          row.innerHTML = '<span class="rank">' + medal + '</span><span class="name">' + (item.user || item.owner || '?') + (item.user === current ? ' (вы)' : '') + '</span><span class="value">' + (formatValue ? formatValue(item) : '') + '</span>';
+          list.appendChild(row);
+        });
+      }
+      function renderRankingRoads() {
+        var territories = getTerritories();
+        var byUser = {};
+        territories.forEach(function(t) {
+          var u = t.owner || '?';
+          if (!byUser[u]) byUser[u] = { user: u, roads: 0, length: 0 };
+          byUser[u].roads++;
+          byUser[u].length += t.lengthMeters || 0;
+        });
+        var arr = Object.keys(byUser).map(function(u) { return byUser[u]; });
+        arr.sort(function(a, b) { return b.roads - a.roads; });
+        fillRankingList('ranking-roads', arr, getCurrentUser(), function(item) {
+          return item.roads + ' дорог, ' + (item.length >= 1000 ? (item.length / 1000).toFixed(1) + ' км' : Math.round(item.length) + ' м');
+        });
+      }
+      function renderRankingKing() {
+        var territories = getTerritories();
+        var byUser = {};
+        territories.forEach(function(t) {
+          var u = t.owner || '?';
+          if (!byUser[u]) byUser[u] = { user: u, roads: 0, length: 0 };
+          byUser[u].roads++;
+          byUser[u].length += t.lengthMeters || 0;
+        });
+        var arr = Object.keys(byUser).map(function(u) { return byUser[u]; });
+        arr.sort(function(a, b) { if (b.roads !== a.roads) return b.roads - a.roads; return b.length - a.length; });
+        fillRankingList('ranking-king', arr, getCurrentUser(), function(item) {
+          return item.roads + ' территорий';
+        });
+      }
+      function renderRankingActive() {
+        var territories = getTerritories();
+        var byUser = {};
+        territories.forEach(function(t) {
+          var u = t.owner || '?';
+          if (!byUser[u]) byUser[u] = { user: u, roads: 0, length: 0 };
+          byUser[u].roads++;
+          byUser[u].length += t.lengthMeters || 0;
+        });
+        var arr = Object.keys(byUser).map(function(u) { return byUser[u]; });
+        arr.sort(function(a, b) { return b.length - a.length; });
+        fillRankingList('ranking-active', arr, getCurrentUser(), function(item) {
+          return (item.length >= 1000 ? (item.length / 1000).toFixed(1) + ' км' : Math.round(item.length) + ' м') + ' всего';
+        });
+      }
+      function renderRankingLongest() {
+        var territories = getTerritories();
+        var arr = territories.map(function(t) {
+          return { owner: t.owner, lengthMeters: t.lengthMeters || 0, length: t.lengthMeters || 0 };
+        }).filter(function(x) { return x.lengthMeters > 0; });
+        arr.sort(function(a, b) { return b.lengthMeters - a.lengthMeters; });
+        var list = document.getElementById('ranking-longest');
+        if (!list) return;
+        list.innerHTML = '';
+        if (arr.length === 0) {
+          list.innerHTML = '<p style="color:var(--text-muted);font-size:0.9rem;">Пока нет маршрутов.</p>';
+          return;
+        }
+        arr.slice(0, 10).forEach(function(item, i) {
+          var row = document.createElement('div');
+          row.className = 'ranking-row';
+          row.innerHTML = '<span class="rank">' + (i + 1) + '</span><span class="name">' + (item.owner || '?') + (item.owner === getCurrentUser() ? ' (вы)' : '') + '</span><span class="value">' + (item.lengthMeters >= 1000 ? (item.lengthMeters / 1000).toFixed(2) + ' км' : Math.round(item.lengthMeters) + ' м') + '</span>';
+          list.appendChild(row);
+        });
+      }
+      function renderMyRoutes() {
+        var list = document.getElementById('my-routes-list');
+        if (!list) return;
+        var user = getCurrentUser();
+        var territories = getTerritories().filter(function(t) { return t.owner === user; });
+        territories.sort(function(a, b) { return (b.lengthMeters || 0) - (a.lengthMeters || 0); });
+        list.innerHTML = '';
+        if (territories.length === 0) {
+          list.innerHTML = '<p style="color:var(--text-muted);font-size:0.9rem;">У вас пока нет захваченных дорог. Нажмите GO! и начните пробежку.</p>';
+          return;
+        }
+        territories.forEach(function(t) {
+          var el = document.createElement('div');
+          el.className = 'my-route-item';
+          var dateStr = t.lastDefendedAt ? new Date(t.lastDefendedAt).toLocaleDateString('ru') : '—';
+          el.innerHTML = '<span>' + (t.lengthMeters >= 1000 ? (t.lengthMeters / 1000).toFixed(2) + ' км' : Math.round(t.lengthMeters) + ' м') + '</span><span style="color:var(--text-muted);font-size:0.85rem;">защита: ' + dateStr + '</span>';
+          list.appendChild(el);
+        });
+      }
+      function switchPage(pageId) {
+        document.querySelectorAll('.app-page').forEach(function(p) { p.classList.remove('active'); });
+        document.querySelectorAll('.bottom-nav-item').forEach(function(b) { b.classList.remove('active'); });
+        var page = document.getElementById('page-' + pageId);
+        var btn = document.querySelector('.bottom-nav-item[data-page="' + pageId + '"]');
+        if (page) page.classList.add('active');
+        if (btn) btn.classList.add('active');
+        var user = getCurrentUser();
+        var letter = (user || '?').charAt(0).toUpperCase();
+        document.getElementById('header-avatar-stats').textContent = letter;
+        var avatarRun = document.getElementById('header-avatar-run');
+        if (avatarRun) avatarRun.textContent = letter;
+        document.getElementById('header-avatar-activity').textContent = letter;
+        if (pageId === 'stats') { renderRanking(); }
+        if (pageId === 'activity') {
+          document.getElementById('page-activity-streak').textContent = calculateStreak();
+          renderCalendarActivity();
+        }
+        if (pageId === 'run') {
+          if (typeof renderTerritoryMap === 'function') renderTerritoryMap();
+          if (territoryMapInstance) setTimeout(function() { territoryMapInstance.invalidateSize(); }, 100);
+        }
+      }
+      function renderCalendarActivity() {
+        var titleEl = document.getElementById('month-title-activity');
+        var container = document.getElementById('calendar-days-activity');
+        if (!titleEl || !container) return;
+        titleEl.textContent = months[viewMonth] + ' ' + viewYear;
+        var todayStr = todayKey();
+        var start = new Date(viewYear, viewMonth, 1);
+        var startDay = start.getDay();
+        var startOffset = startDay === 0 ? 6 : startDay - 1;
+        var daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
+        container.innerHTML = '';
+        for (var i = 0; i < startOffset; i++) {
+          var cell = document.createElement('div');
+          cell.className = 'calendar-day other-month';
+          cell.innerHTML = '<span class="day-num"></span>';
+          container.appendChild(cell);
+        }
+        for (var d = 1; d <= daysInMonth; d++) {
+          var dateStr = viewYear + '-' + String(viewMonth + 1).padStart(2, '0') + '-' + String(d).padStart(2, '0');
+          var cell = document.createElement('div');
+          cell.className = 'calendar-day';
+          cell.innerHTML = '<span class="day-num">' + d + '</span>';
+          if (dateStr === todayStr) cell.classList.add('today');
+          if (isDayMarkedAchievement(dateStr)) cell.classList.add('achievement');
+          container.appendChild(cell);
+        }
+      }
+
+      document.querySelectorAll('.bottom-nav-item[data-page]').forEach(function(btn) {
+        btn.addEventListener('click', function() { switchPage(this.getAttribute('data-page')); });
+      });
+      document.getElementById('nav-go-btn').addEventListener('click', function() {
+        switchPage('run');
+        setTimeout(startRun, 200);
+      });
+
+      document.getElementById('btn-start-run').addEventListener('click', startRun);
+      document.getElementById('btn-stop-run').addEventListener('click', stopRun);
+
+      function updateDashboard() {
+        updateStreak();
+        updateProgressCircles();
+        renderDailyChart();
+        updateDoneLeftStats();
+        renderHabitsProgress();
+        renderTopHabits();
+      }
+
+      function getStreak() {
+        const user = getCurrentUser();
+        if (!user) return 0;
+        const data = getUserData(user);
+        var count = 0;
+        var d = new Date();
+        for (var i = 0; i < 366; i++) {
+          var dateStr = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+          if (!isDayMarkedAchievement(dateStr)) break;
+          count++;
+          d.setDate(d.getDate() - 1);
+        }
+        return count;
+      }
+
+      function calculateStreak() {
+        const user = getCurrentUser();
+        if (!user) return 0;
+        const data = getUserData(user);
+        var count = 0;
+        var d = new Date();
+        for (var i = 0; i < 366; i++) {
+          var dateStr = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+          if (!isDayMarkedAchievement(dateStr)) break;
+          count++;
+          d.setDate(d.getDate() - 1);
+        }
+        return count;
+      }
+      
+      function updateStreak() {
+        var n = calculateStreak();
+        var el = document.getElementById('streak-value-num');
+        if (el) el.textContent = n;
+        
+        const user = getCurrentUser();
+        if (!user) return;
+        const data = getUserData(user);
+        const today = todayKey();
+        const doneToday = (data.dailyDone[today] || []).length;
+        const totalTasks = (data.tasks || []).length;
+        
+        var now = new Date();
+        var currentMonth = now.getMonth() + 1;
+        var currentYear = now.getFullYear();
+        var key = monthKey(currentYear, currentMonth);
+        var achievedDays = (data.monthAchievements[key] || []).length;
+        var daysInMonth = new Date(currentYear, currentMonth, 0).getDate();
+        
+        var summaryEl = document.getElementById('tasks-summary');
+        if (summaryEl) {
+          summaryEl.textContent = 'Дней с достижениями: ' + achievedDays + ' из ' + daysInMonth;
+        }
+        
+        var mainCircle = document.getElementById('main-progress-circle');
+        if (mainCircle) {
+          var c = 2 * Math.PI * 42;
+          var pct = achievedDays / daysInMonth;
+          var offset = c * (1 - pct);
+          
+          console.log('Circle progress:', achievedDays, 'achieved days of', daysInMonth, 'total, pct:', (pct * 100).toFixed(1) + '%');
+          
+          mainCircle.setAttribute('stroke-dasharray', c + ' ' + c);
+          mainCircle.setAttribute('stroke-dashoffset', c);
+          
+          setTimeout(function() {
+            mainCircle.setAttribute('stroke-dashoffset', offset);
+          }, 100);
+        }
+        
+        updateActivityCards();
+      }
+
+      function updateProgressCircles() {
+        const user = getCurrentUser();
+        if (!user) return;
+        const data = getUserData(user);
+        const tasks = data.tasks || [];
+        const totalTasks = tasks.length || 1;
+        const today = todayKey();
+        const doneToday = (data.dailyDone[today] || []).length;
+        const dailyPct = Math.round((doneToday / totalTasks) * 100);
+
+        var now = new Date();
+        var weekStart = new Date(now);
+        weekStart.setDate(now.getDate() - ((now.getDay() + 6) % 7));
+        var weekAchievements = 0;
+        for (var w = 0; w < 7; w++) {
+          var d = new Date(weekStart);
+          d.setDate(weekStart.getDate() + w);
+          var mk = monthKey(d.getFullYear(), d.getMonth() + 1);
+          var daysArr = (data.monthAchievements || {})[mk] || [];
+          if (daysArr.indexOf(d.getDate()) >= 0) weekAchievements++;
+        }
+        var weeklyPct = Math.round((weekAchievements / 7) * 100);
+
+        var monthKeyCur = monthKey(now.getFullYear(), now.getMonth() + 1);
+        var achievedDays = (data.monthAchievements || {})[monthKeyCur] || [];
+        var daysSoFar = now.getDate();
+        var monthlyPct = daysSoFar ? Math.round((achievedDays.length / daysSoFar) * 100) : 0;
+        monthlyPct = Math.min(100, monthlyPct);
+
+        var momentum = Math.round((dailyPct + weeklyPct + monthlyPct) / 3);
+
+        var container = document.getElementById('progress-circles');
+        if (!container) return;
+        var html = '';
+        [['momentum', 'MOMENTUM', momentum, 'momentum'], ['daily', 'DAILY PROGRESS', dailyPct, 'daily'], ['weekly', 'WEEKLY PROGRESS', weeklyPct, 'weekly'], ['monthly', 'MONTHLY PROGRESS', monthlyPct, 'monthly']].forEach(function(x) {
+          var id = x[0], label = x[1], val = x[2], cls = x[3];
+          var r = 28;
+          var c = 2 * Math.PI * r;
+          var fill = (val / 100) * c;
+          html += '<div class="progress-circle-wrap ' + id + '"><svg class="circle-svg ' + id + '" viewBox="0 0 64 64"><circle class="bg" cx="32" cy="32" r="' + r + '"/><circle class="fill" cx="32" cy="32" r="' + r + '" stroke-dasharray="' + fill + ' ' + c + '"/></svg><div class="label">' + label + '</div><div class="value">' + val + '%</div></div>';
+        });
+        container.innerHTML = html;
+      }
+
+      function getDayProgress(dateStr) {
+        const user = getCurrentUser();
+        if (!user) return 0;
+        const data = getUserData(user);
+        const tasks = data.tasks || [];
+        if (tasks.length === 0) return 0;
+        const done = (data.dailyDone[dateStr] || []).length;
+        return Math.round((done / tasks.length) * 100);
+      }
+
+      var dailyChartInstance = null;
+      function renderDailyChart() {
+        var labels = [];
+        var data = [];
+        for (var i = 0; i < 14; i++) {
+          var d = new Date();
+          d.setDate(d.getDate() - (13 - i));
+          var dateStr = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+          labels.push('');
+          data.push(getDayProgress(dateStr));
+        }
+        var canvas = document.getElementById('daily-chart');
+        if (!canvas) return;
+        if (typeof Chart === 'undefined') {
+          canvas.parentNode.innerHTML = '<p style="color:var(--text-muted);font-size:0.9rem;padding:1rem;">Загрузка графика…</p>';
+          return;
+        }
+        if (dailyChartInstance) {
+          dailyChartInstance.data.labels = labels;
+          dailyChartInstance.data.datasets[0].data = data;
+          dailyChartInstance.update('none');
+          return;
+        }
+        var ctx = canvas.getContext('2d');
+        var grad = ctx.createLinearGradient(0, 0, 0, 200);
+        grad.addColorStop(0, 'rgba(45, 212, 191, 0.45)');
+        grad.addColorStop(0.5, 'rgba(45, 212, 191, 0.2)');
+        grad.addColorStop(1, 'rgba(45, 212, 191, 0.02)');
+        dailyChartInstance = new Chart(ctx, {
+          type: 'line',
+          data: {
+            labels: labels,
+            datasets: [{
+              label: 'Прогресс',
+              data: data,
+              borderColor: '#2dd4bf',
+              backgroundColor: grad,
+              fill: true,
+              tension: 0.35,
+              pointRadius: 4,
+              pointHoverRadius: 5,
+              pointBackgroundColor: '#2dd4bf',
+              pointBorderColor: '#1a2332',
+              pointBorderWidth: 1,
+              borderWidth: 2.5,
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            layout: { padding: { top: 8, right: 12, bottom: 8, left: 12 } },
+            plugins: {
+              legend: { display: false },
+              tooltip: {
+                backgroundColor: 'rgba(26, 35, 50, 0.95)',
+                titleColor: '#e8eaed',
+                bodyColor: '#2dd4bf',
+                borderColor: 'rgba(255,255,255,0.1)',
+                borderWidth: 1,
+                callbacks: {
+                  label: function(ctx) {
+                    return ctx.raw + '%';
+                  }
+                }
+              }
+            },
+            scales: {
+              x: {
+                display: false,
+                grid: { display: false }
+              },
+              y: {
+                min: 0,
+                max: 100,
+                display: false,
+                grid: { display: false }
+              }
+            }
+          },
+          plugins: [{
+            id: 'chartBg',
+            beforeDraw: function(chart) {
+              var ctx = chart.ctx;
+              var area = chart.chartArea;
+              if (!area) return;
+              ctx.save();
+              ctx.fillStyle = '#1a2332';
+              ctx.fillRect(area.left, area.top, area.right - area.left, area.bottom - area.top);
+              ctx.restore();
+            }
+          }]
+        });
+      }
+
+      function updateDoneLeftStats() {
+        const user = getCurrentUser();
+        if (!user) return;
+        const data = getUserData(user);
+        const tasks = data.tasks || [];
+        const today = todayKey();
+        const done = (data.dailyDone[today] || []).length;
+        document.getElementById('stat-done').textContent = done;
+        document.getElementById('stat-left').textContent = tasks.length - done;
+      }
+
+      function getTaskProgressInMonth(taskId) {
+        const user = getCurrentUser();
+        if (!user) return 0;
+        const data = getUserData(user);
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = now.getMonth();
+        const daysInMonth = new Date(year, month + 1, 0).getDate();
+        var count = 0;
+        for (var day = 1; day <= daysInMonth; day++) {
+          var dateStr = year + '-' + String(month + 1).padStart(2, '0') + '-' + String(day).padStart(2, '0');
+          if ((data.dailyDone[dateStr] || []).indexOf(taskId) >= 0) count++;
+        }
+        return daysInMonth ? Math.round((count / daysInMonth) * 100) : 0;
+      }
+
+      function renderHabitsProgress() {
+        const user = getCurrentUser();
+        if (!user) return;
+        const data = getUserData(user);
+        const tasks = data.tasks || [];
+        const container = document.getElementById('habits-list');
+        if (tasks.length === 0) { container.innerHTML = '<p class="empty-state">Добавьте задачи — здесь появится прогресс по дням месяца.</p>'; return; }
+        var html = '';
+        tasks.forEach(function(task) {
+          var pct = getTaskProgressInMonth(task.id);
+          html += '<div class="habit-row"><span class="name">' + escapeHtml(task.name) + '</span><div class="habit-bar-wrap"><div class="habit-bar" style="width:' + pct + '%"></div></div><span class="pct">' + pct + '%</span></div>';
+        });
+        container.innerHTML = html;
+      }
+
+      function renderTopHabits() {
+        const user = getCurrentUser();
+        if (!user) return;
+        const data = getUserData(user);
+        const tasks = data.tasks || [];
+        var arr = tasks.map(function(t) { return { name: t.name, pct: getTaskProgressInMonth(t.id) }; });
+        arr.sort(function(a, b) { return b.pct - a.pct; });
+        var top = arr.slice(0, 5);
+        const colors = ['var(--chart-green)', 'var(--chart-blue)', 'var(--chart-purple)', 'var(--chart-orange)', 'var(--accent)'];
+        var html = '';
+        top.forEach(function(h, i) {
+          html += '<div class="top-habit-row"><span class="name">' + escapeHtml(h.name) + '</span><div class="bar-wrap"><div class="bar" style="width:' + h.pct + '%;background:' + colors[i] + '"></div></div><span class="pct">' + h.pct + '%</span></div>';
+        });
+        if (top.length === 0) html = '<p class="empty-state">Нет данных за месяц.</p>';
+        document.getElementById('top-habits-list').innerHTML = html;
+      }
+
+      function updateTodayBadge() {
+        const d = new Date();
+        const day = d.getDate();
+        const month = monthsShort[d.getMonth()];
+        const year = d.getFullYear();
+        document.getElementById('today-badge').textContent = day + ' ' + month + ' ' + year;
+      }
+
+      function renderQuickAdd() {
+        const user = getCurrentUser();
+        if (!user) return;
+        const data = getUserData(user);
+        const hasTasks = (data.tasks || []).length > 0;
+        const container = document.getElementById('quick-add');
+        container.innerHTML = '';
+        if (!hasTasks) {
+          DEFAULT_TASKS.forEach(function(name) {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'btn quick-add-btn';
+            btn.textContent = '+ ' + name;
+            btn.addEventListener('click', function() { addTaskByName(name); });
+            container.appendChild(btn);
+          });
+        }
+      }
+
+      function addTaskByName(name) {
+        const user = getCurrentUser();
+        if (!user) return;
+        const data = getUserData(user);
+        data.tasks = data.tasks || [];
+        const id = 't' + Date.now();
+        data.tasks.push({ id: id, name: name });
+        setUserData(user, data);
+        renderQuickAdd();
+        loadTasks();
+      }
+
+      // --- Calendar Variables ---
+      let viewMonth = new Date().getMonth();
+      let viewYear = new Date().getFullYear();
+
+      // --- Tasks ---
+      function loadTasks() {
+        const user = getCurrentUser();
+        if (!user) return;
+        const data = getUserData(user);
+        const list = document.getElementById('task-list-new') || document.getElementById('task-list');
+        const today = todayKey();
+        const doneToday = data.dailyDone[today] || [];
+
+        list.innerHTML = '';
+        (data.tasks || []).forEach((task, i) => {
+          const div = document.createElement('div');
+          div.className = 'task-item-new' + (doneToday.includes(task.id) ? ' done' : '');
+          div.dataset.taskId = task.id;
+          div.innerHTML = '<div class="task-checkbox-new"></div><div class="task-content-new"><div class="task-name-new">' + escapeHtml(task.name) + '</div></div><button type="button" class="task-delete-new" aria-label="Удалить">×</button>';
+          const cb = div.querySelector('.task-checkbox-new');
+          const del = div.querySelector('.task-delete-new');
+          cb.addEventListener('click', () => toggleTask(task.id));
+          div.addEventListener('click', (e) => {
+            if (e.target !== del) toggleTask(task.id);
+          });
+          del.addEventListener('click', (e) => {
+            e.stopPropagation();
+            deleteTask(task.id);
+          });
+          list.appendChild(div);
+        });
+
+        if (data.tasks.length === 0) {
+          list.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--text-muted);">Пока нет задач. Добавьте первую активность!</div>';
+        }
+        renderQuickAdd();
+        updateDashboard();
+        updateDayAchievementButton();
+      }
+
+      function escapeHtml(s) {
+        const div = document.createElement('div');
+        div.textContent = s;
+        return div.innerHTML;
+      }
+
+      function toggleTask(taskId) {
+        const user = getCurrentUser();
+        if (!user) return;
+        const data = getUserData(user);
+        const today = todayKey();
+        let done = data.dailyDone[today] || [];
+        if (done.includes(taskId)) {
+          done = done.filter(id => id !== taskId);
+        } else {
+          done = [...done, taskId];
+        }
+        data.dailyDone[today] = done;
+        setUserData(user, data);
+        loadTasks();
+        
+        if (allTasksDoneToday() && !isDayMarkedAchievement(today)) {
+          setTimeout(function() {
+            markDayAsAchievement();
+          }, 500);
+        }
+      }
+
+      function deleteTask(taskId) {
+        const user = getCurrentUser();
+        if (!user) return;
+        const data = getUserData(user);
+        data.tasks = (data.tasks || []).filter(t => t.id !== taskId);
+        const today = todayKey();
+        if (data.dailyDone[today]) {
+          data.dailyDone[today] = data.dailyDone[today].filter(id => id !== taskId);
+        }
+        Object.keys(data.dailyDone || {}).forEach(day => {
+          data.dailyDone[day] = data.dailyDone[day].filter(id => id !== taskId);
+        });
+        setUserData(user, data);
+        loadTasks();
+      }
+
+      var btnAddTask = document.getElementById('btn-add-task');
+      if (btnAddTask) btnAddTask.addEventListener('click', addTask);
+      document.getElementById('new-task').addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') { e.preventDefault(); addTask(); }
+      });
+
+      function addTask() {
+        const input = document.getElementById('new-task');
+        const name = input.value.trim();
+        if (!name) return;
+        const user = getCurrentUser();
+        if (!user) return;
+        const data = getUserData(user);
+        data.tasks = data.tasks || [];
+        const id = 't' + Date.now();
+        data.tasks.push({ id, name });
+        setUserData(user, data);
+        input.value = '';
+        loadTasks();
+      }
+
+      function allTasksDoneToday() {
+        const user = getCurrentUser();
+        if (!user) return false;
+        const data = getUserData(user);
+        const tasks = data.tasks || [];
+        if (tasks.length === 0) return true;
+        const today = todayKey();
+        const done = data.dailyDone[today] || [];
+        return tasks.every(t => done.includes(t.id));
+      }
+
+      function isDayMarkedAchievement(dateStr) {
+        const user = getCurrentUser();
+        if (!user) return false;
+        const data = getUserData(user);
+        const [y, m, d] = dateStr.split('-');
+        const key = monthKey(y, m);
+        const days = data.monthAchievements[key] || [];
+        return days.indexOf(parseInt(d, 10)) >= 0;
+      }
+
+      function markDayAsAchievement() {
+        const user = getCurrentUser();
+        if (!user) return;
+        const data = getUserData(user);
+        const today = todayKey();
+        const [y, m, d] = today.split('-');
+        const key = monthKey(y, m);
+        data.monthAchievements = data.monthAchievements || {};
+        data.monthAchievements[key] = data.monthAchievements[key] || [];
+        const dayNum = parseInt(d, 10);
+        if (!data.monthAchievements[key].includes(dayNum)) {
+          data.monthAchievements[key].push(dayNum);
+        }
+        setUserData(user, data);
+        updateDayAchievementButton();
+        updateDashboard();
+        renderCalendar();
+      }
+
+      function markAllTasksToday() {
+        const user = getCurrentUser();
+        if (!user) return;
+        const data = getUserData(user);
+        const tasks = data.tasks || [];
+        const today = todayKey();
+        
+        data.dailyDone[today] = tasks.map(t => t.id);
+        setUserData(user, data);
+        loadTasks();
+        
+        markDayAsAchievement();
+      }
+
+      function updateDayAchievementButton() {
+        const btn = document.getElementById('btn-mark-day');
+        const btnMarkAll = document.getElementById('btn-mark-all-tasks');
+        const status = document.getElementById('day-status-text');
+        const today = todayKey();
+        const already = isDayMarkedAchievement(today);
+        
+        if (already) {
+          btn.disabled = true;
+          btn.textContent = 'День отмечен ✓';
+          btn.style.background = 'var(--card-hover)';
+          btn.style.borderColor = 'var(--border)';
+          btn.style.color = 'var(--text-muted)';
+          btn.style.cursor = 'not-allowed';
+          status.textContent = 'Сегодня вы уже отметили день — он засчитан в достижениях.';
+          if (btnMarkAll) btnMarkAll.style.display = 'none';
+          return;
+        }
+        
+        btn.disabled = false;
+        btn.textContent = 'День прошёл удачно ✓';
+        btn.style.background = 'var(--lime)';
+        btn.style.borderColor = 'var(--lime)';
+        btn.style.color = '#000';
+        btn.style.cursor = 'pointer';
+        
+        const user = getCurrentUser();
+        const data = getUserData(user);
+        const tasks = data.tasks || [];
+        const allDone = allTasksDoneToday();
+        
+        if (btnMarkAll) {
+          if (tasks.length === 0 || allDone) {
+            btnMarkAll.style.display = 'none';
+          } else {
+            btnMarkAll.style.display = 'block';
+          }
+        }
+        
+        if (tasks.length === 0) {
+          status.textContent = 'Нажмите кнопку, когда день прошёл удачно — он засчитается в достижениях.';
+        } else if (allDone) {
+          status.textContent = 'Все задачи выполнены. День можно отметить как прошедший удачно.';
+        } else {
+          const done = data.dailyDone[today] || [];
+          status.textContent = 'Сделано: ' + done.length + ' из ' + tasks.length + '. Можете в любой момент отметить день как прошедший удачно.';
+        }
+      }
+
+      var dayButtonsSetup = false;
+      function setupDayButtons() {
+        if (dayButtonsSetup) return;
+        dayButtonsSetup = true;
+        var btnMarkDay = document.getElementById('btn-mark-day');
+        var btnMarkAllTasks = document.getElementById('btn-mark-all-tasks');
+        
+        if (btnMarkDay) {
+          btnMarkDay.addEventListener('click', function() {
+            if (this.disabled) return;
+            markDayAsAchievement();
+          });
+        }
+        
+        if (btnMarkAllTasks) {
+          btnMarkAllTasks.addEventListener('click', function() {
+            markAllTasksToday();
+          });
+        }
+      }
+
+      // --- Calendar ---
+      var calendarRenderRetried = false;
+      function renderCalendar() {
+        const container = document.getElementById('calendar-days');
+        if (!container) {
+          if (!calendarRenderRetried) {
+            calendarRenderRetried = true;
+            setTimeout(renderCalendar, 250);
+          }
+          return;
+        }
+        calendarRenderRetried = false;
+        var monthTitle = document.getElementById('month-title');
+        var monthStats = document.getElementById('month-stats');
+        var cur = getCurrentUser();
+        var today = new Date();
+        var todayStr = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0') + '-' + String(today.getDate()).padStart(2, '0');
+        var first, start, daysInMonth, prevMonth, prevYear, prevDays, key, daysInCurMonth, achieved;
+        try {
+          first = new Date(viewYear, viewMonth, 1);
+          start = first.getDay() - 1;
+          if (start < 0) start += 7;
+          daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
+          prevMonth = viewMonth === 0 ? 11 : viewMonth - 1;
+          prevYear = viewMonth === 0 ? viewYear - 1 : viewYear;
+          prevDays = new Date(prevYear, prevMonth + 1, 0).getDate();
+          key = monthKey(viewYear, viewMonth + 1);
+          achieved = cur ? ((getUserData(cur).monthAchievements || {})[key] || []) : [];
+          daysInCurMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
+        } catch (e) {
+          console.error('Calendar init error:', e);
+          return;
+        }
+        if (monthTitle) monthTitle.textContent = months[viewMonth] + ' ' + viewYear;
+        if (monthStats) monthStats.textContent = 'Дней с достижениями: ' + achieved.length + ' из ' + daysInCurMonth;
+
+        var frag = document.createDocumentFragment();
+        var i, d, dateStr, cell;
+        try {
+          for (i = 0; i < start; i++) {
+            d = prevDays - start + i + 1;
+            dateStr = prevYear + '-' + String(prevMonth + 1).padStart(2, '0') + '-' + String(d).padStart(2, '0');
+            cell = document.createElement('div');
+            cell.className = 'calendar-day other-month';
+            cell.innerHTML = '<span class="day-num">' + d + '</span>';
+            if (isDayMarkedAchievement(dateStr)) cell.classList.add('achievement');
+            frag.appendChild(cell);
+          }
+          for (d = 1; d <= daysInMonth; d++) {
+            dateStr = viewYear + '-' + String(viewMonth + 1).padStart(2, '0') + '-' + String(d).padStart(2, '0');
+            cell = document.createElement('div');
+            cell.className = 'calendar-day';
+            cell.innerHTML = '<span class="day-num">' + d + '</span>';
+            if (dateStr === todayStr) cell.classList.add('today');
+            if (isDayMarkedAchievement(dateStr)) {
+              cell.classList.add('achievement');
+            } else if (cur) {
+              var userData = getUserData(cur);
+              var dayDone = userData.dailyDone[dateStr];
+              var cellDate = new Date(dateStr);
+              var nowDate = new Date(todayStr);
+              if (cellDate < nowDate && dayDone && dayDone.length === 0) cell.classList.add('missed');
+            }
+            frag.appendChild(cell);
+          }
+          var total = start + daysInMonth;
+          var nextCells = total % 7 === 0 ? 0 : 7 - (total % 7);
+          var nextM = viewMonth === 11 ? 0 : viewMonth + 1;
+          var nextY = viewMonth === 11 ? viewYear + 1 : viewYear;
+          for (i = 0; i < nextCells; i++) {
+            d = i + 1;
+            dateStr = nextY + '-' + String(nextM + 1).padStart(2, '0') + '-' + String(d).padStart(2, '0');
+            cell = document.createElement('div');
+            cell.className = 'calendar-day other-month';
+            cell.innerHTML = '<span class="day-num">' + d + '</span>';
+            if (isDayMarkedAchievement(dateStr)) cell.classList.add('achievement');
+            frag.appendChild(cell);
+          }
+        } catch (err) {
+          console.error('Calendar build error:', err);
+          return;
+        }
+        container.innerHTML = '';
+        container.appendChild(frag);
+      }
+
+      var monthPrev = document.getElementById('month-prev');
+      var monthNext = document.getElementById('month-next');
+      var monthToday = document.getElementById('month-today');
+      if (monthPrev) monthPrev.addEventListener('click', function() {
+        viewMonth--;
+        if (viewMonth < 0) { viewMonth = 11; viewYear--; }
+        renderCalendar();
+        renderCalendarActivity();
+      });
+      if (monthNext) monthNext.addEventListener('click', function() {
+        viewMonth++;
+        if (viewMonth > 11) { viewMonth = 0; viewYear++; }
+        renderCalendar();
+        renderCalendarActivity();
+      });
+      if (monthToday) monthToday.addEventListener('click', function() {
+        var now = new Date();
+        viewMonth = now.getMonth();
+        viewYear = now.getFullYear();
+        renderCalendar();
+        renderCalendarActivity();
+      });
+      var monthPrevActivity = document.getElementById('month-prev-activity');
+      var monthNextActivity = document.getElementById('month-next-activity');
+      if (monthPrevActivity) monthPrevActivity.addEventListener('click', function() {
+        viewMonth--;
+        if (viewMonth < 0) { viewMonth = 11; viewYear--; }
+        renderCalendar();
+        renderCalendarActivity();
+      });
+      if (monthNextActivity) monthNextActivity.addEventListener('click', function() {
+        viewMonth++;
+        if (viewMonth > 11) { viewMonth = 0; viewYear++; }
+        renderCalendar();
+        renderCalendarActivity();
+      });
+
+      window.addEventListener('pageshow', function(ev) {
+        if (ev.persisted && getCurrentUser()) renderCalendar();
+      });
+      var calendarSection = document.querySelector('.calendar-section');
+      if (calendarSection && typeof IntersectionObserver !== 'undefined') {
+        var calendarObs = new IntersectionObserver(function(entries) {
+          if (entries[0].isIntersecting && document.getElementById('calendar-days') && !document.getElementById('calendar-days').children.length) {
+            renderCalendar();
+          }
+        }, { rootMargin: '100px', threshold: 0 });
+        calendarObs.observe(calendarSection);
+      }
+
+      // --- Init ---
+      function runApp() {
+        if (getCurrentUser()) {
+          showApp();
+          setTimeout(renderCalendar, 600);
+        } else {
+          authScreen.classList.remove('hidden');
+          appScreen.classList.add('hidden');
+        }
+      }
+      initStorage().then(runApp).catch(runApp);
+    })();
+    
+  </script>
+</body>
+</html>
