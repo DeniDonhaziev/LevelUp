@@ -2394,7 +2394,7 @@
       var territoryMapLayers = [];
       var territoryMapUserMarker = null;
 
-      function renderTerritoryMap() {
+function renderTerritoryMap() {
         var container = document.getElementById('territory-map');
         if (!container) return;
         var user = getCurrentUser();
@@ -2402,8 +2402,9 @@
         if (typeof L === 'undefined') return;
 
         if (!territoryMapInstance) {
-          territoryMapInstance = L.map(container).setView([55.75, 37.62], 13);
-          L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap' }).addTo(territoryMapInstance);
+          territoryMapInstance = L.map(container, { attributionControl: false }).setView([55.75, 37.62], 13);
+          L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', { attribution: '', subdomains: 'abcd', maxZoom: 20 }).addTo(territoryMapInstance);
+          L.control.attribution({ prefix: '' }).addAttribution('© CARTO').addTo(territoryMapInstance);
         }
         territoryMapLayers.forEach(function(layer) {
           if (territoryMapInstance && layer) territoryMapInstance.removeLayer(layer);
