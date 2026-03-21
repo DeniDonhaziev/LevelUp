@@ -1384,6 +1384,151 @@
     .ranking-row .value { font-size: 0.9rem; color: var(--lime); }
     .my-location-marker { background: none !important; border: none !important; }
 
+    /* Страница AI — в стиле приложения */
+    #page-ai .ai-page-lead {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      margin-bottom: 1.25rem;
+      line-height: 1.5;
+    }
+    #page-ai .ai-page-lead a { color: var(--lime); text-decoration: none; border-bottom: 1px solid rgba(196, 255, 13, 0.35); }
+    #page-ai .ai-page-lead a:hover { border-bottom-color: var(--lime); }
+    #page-ai .ai-hero {
+      background: linear-gradient(135deg, rgba(196, 255, 13, 0.15), var(--card-hover));
+      border: 1px solid rgba(196, 255, 13, 0.25);
+      border-radius: 16px;
+      padding: 1rem 1.25rem;
+      margin-bottom: 1.25rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+    #page-ai .ai-hero-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 14px;
+      background: rgba(196, 255, 13, 0.2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      flex-shrink: 0;
+    }
+    #page-ai .ai-hero-text .t1 { font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; font-weight: 600; }
+    #page-ai .ai-hero-text .t2 { font-size: 1.05rem; font-weight: 700; color: var(--text); margin-top: 0.2rem; }
+    #page-ai .ai-block {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.5rem;
+      margin-bottom: 1.25rem;
+      transition: border-color 0.25s ease, box-shadow 0.25s ease;
+    }
+    #page-ai .ai-block:hover { border-color: rgba(196, 255, 13, 0.2); }
+    #page-ai .ai-block-title {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 1rem;
+      padding-bottom: 0.75rem;
+      border-bottom: 1px solid var(--border);
+    }
+    #page-ai .ai-field-label {
+      display: block;
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: var(--text-muted);
+      margin-bottom: 0.4rem;
+    }
+    #page-ai .ai-field-label:not(:first-of-type) { margin-top: 1rem; }
+    #page-ai select.ai-select {
+      width: 100%;
+      padding: 0.75rem 1rem;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      font-family: inherit;
+      font-size: 1rem;
+      background: var(--card-hover);
+      color: var(--text);
+      margin-bottom: 0.75rem;
+    }
+    #page-ai select.ai-select:focus {
+      outline: none;
+      border-color: var(--lime);
+      box-shadow: 0 0 0 2px rgba(196, 255, 13, 0.15);
+    }
+    #page-ai .ai-upload-zone {
+      border: 2px dashed var(--border);
+      border-radius: 14px;
+      padding: 1.25rem;
+      text-align: center;
+      background: var(--card-hover);
+      margin-bottom: 1rem;
+      transition: border-color 0.2s, background 0.2s;
+    }
+    #page-ai .ai-upload-zone:hover { border-color: rgba(196, 255, 13, 0.5); background: rgba(196, 255, 13, 0.04); }
+    #page-ai .ai-upload-zone input[type="file"] {
+      width: 100%;
+      font-size: 0.9rem;
+      color: var(--text-muted);
+    }
+    #page-ai .ai-btn-main {
+      width: 100%;
+      padding: 1rem 1.25rem;
+      margin-top: 0.5rem;
+      border: none;
+      border-radius: 12px;
+      background: var(--lime);
+      color: #000;
+      font-family: inherit;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform 0.15s, box-shadow 0.2s;
+      box-shadow: 0 4px 16px rgba(196, 255, 13, 0.25);
+    }
+    #page-ai .ai-btn-main:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(196, 255, 13, 0.35); }
+    #page-ai .ai-btn-second {
+      width: 100%;
+      padding: 0.85rem 1.25rem;
+      margin-top: 0.75rem;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: var(--accent-light);
+      color: var(--accent);
+      font-family: inherit;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s, border-color 0.2s;
+    }
+    #page-ai .ai-btn-second:hover { background: rgba(48, 209, 88, 0.22); border-color: var(--accent); }
+    #page-ai .ai-error { color: var(--chart-orange); font-size: 0.85rem; margin-top: 0.65rem; min-height: 0; }
+    #page-ai .ai-result-box {
+      white-space: pre-wrap;
+      font-size: 0.92rem;
+      color: var(--text);
+      margin-top: 0.75rem;
+      padding: 1rem 1.15rem;
+      background: var(--card-hover);
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      min-height: 2.5em;
+      font-family: inherit;
+      line-height: 1.5;
+    }
+    #page-ai .ai-advice-bubble {
+      margin-top: 1rem;
+      padding: 1rem 1.2rem;
+      border-radius: 14px;
+      background: linear-gradient(145deg, rgba(196, 255, 13, 0.1), var(--card-hover));
+      border: 1px solid rgba(196, 255, 13, 0.22);
+      font-size: 0.95rem;
+      color: var(--text);
+      line-height: 1.5;
+    }
+    #page-ai .ai-advice-bubble strong { color: var(--lime); font-weight: 600; }
+
     /* Нижняя навигация и страницы */
     .app-content { padding-bottom: 100px; }
     .app-page { display: none; min-height: 40vh; }
@@ -1468,7 +1613,7 @@
         <label for="login-password">Пароль</label>
         <input type="password" id="login-password" required autocomplete="current-password">
         <button type="submit" class="btn btn-primary">Войти</button>
-        <p style="margin-top:1rem;font-size:0.85rem;color:var(--text-muted);text-align:center;">💾 Все данные сохраняются на вашем устройстве</p>
+        <p style="margin-top:1rem;font-size:0.85rem;color:var(--text-muted);text-align:center;">💾 Аккаунт и прогресс сохраняются сразу на этом устройстве — можно выйти и войти снова</p>
       </form>
       <form id="form-register" class="hidden">
         <label for="reg-username">Имя пользователя</label>
@@ -1476,7 +1621,7 @@
         <label for="reg-password">Пароль</label>
         <input type="password" id="reg-password" required autocomplete="new-password">
         <button type="submit" class="btn btn-primary">Зарегистрироваться</button>
-        <p style="margin-top:1rem;font-size:0.85rem;color:var(--text-muted);text-align:center;">✅ Аккаунт сохранится и вы сможете войти позже</p>
+        <p style="margin-top:1rem;font-size:0.85rem;color:var(--text-muted);text-align:center;">✅ Регистрация сразу сохраняется — потом входите тем же логином и паролем</p>
       </form>
     </div>
   </div>
@@ -1588,6 +1733,49 @@
     </div>
     <!-- Конец page-home -->
 
+    <!-- Страница: AI (еда по фото + совет) -->
+    <div id="page-ai" class="app-page">
+      <div class="header">
+        <div class="header-profile">
+          <div class="avatar" id="header-avatar-ai">?</div>
+          <div><div class="greeting">AI</div><div class="username">Еда и советы</div></div>
+        </div>
+      </div>
+      <div class="ai-hero">
+        <div class="ai-hero-icon" aria-hidden="true">🤖</div>
+        <div class="ai-hero-text">
+          <div class="t1">Умный помощник</div>
+          <div class="t2">Еда по фото и персональные советы</div>
+        </div>
+      </div>
+      <p class="ai-page-lead" id="ai-lead-local">
+        Локально в браузере: MobileNet (нейросеть). Фото никуда не отправляется.
+        При первом анализе из интернета подгружается модель. Калории — грубая оценка (не медицина).
+      </p>
+      <div class="ai-block">
+        <h3 class="ai-block-title">Фото и цель</h3>
+        <label class="ai-field-label" for="ai-food-file">Фото еды</label>
+        <div class="ai-upload-zone">
+          <input type="file" id="ai-food-file" accept="image/*">
+        </div>
+        <label class="ai-field-label" for="ai-goal">Цель</label>
+        <select id="ai-goal" class="ai-select">
+          <option value="похудение">Похудение</option>
+          <option value="поддержание веса" selected>Поддержание веса</option>
+          <option value="набор мышечной массы">Набор мышечной массы</option>
+        </select>
+        <button type="button" id="ai-btn-analyze" class="ai-btn-main">Распознать еду по фото</button>
+        <p id="ai-food-error" class="ai-error"></p>
+        <pre id="ai-food-result" class="ai-result-box"></pre>
+      </div>
+      <div class="ai-block">
+        <h3 class="ai-block-title">Совет</h3>
+        <button type="button" id="ai-btn-advice" class="ai-btn-second">Получить совет по цели</button>
+        <p id="ai-advice-error" class="ai-error"></p>
+        <div id="ai-advice-result" class="ai-advice-bubble"></div>
+      </div>
+    </div>
+
     <!-- Страница: Рейтинги (по разным категориям) -->
     <div id="page-stats" class="app-page">
       <div class="header">
@@ -1631,6 +1819,8 @@
         <h2 class="section-title">🗺️ Мои территории</h2>
         <p class="territory-hint" style="font-size:0.9rem;color:var(--text-muted);margin-bottom:1rem;">Ваши захваченные дороги и текущее местоположение. Защищайте территорию, пробегая по ней раз в неделю.</p>
         <div id="territory-map" style="height:280px;border-radius:12px;background:var(--card-hover);border:1px solid var(--border);"></div>
+        <p id="map-location-status" style="font-size:0.85rem;color:var(--text-muted);margin-top:0.5rem;min-height:1.2em;"></p>
+        <button type="button" class="btn btn-secondary" id="btn-show-my-location" style="width:100%;margin-top:0.75rem;padding:0.75rem;">📍 Показать моё местоположение</button>
         <div id="territory-legend" style="display:flex;flex-wrap:wrap;gap:0.75rem;margin-top:0.75rem;font-size:0.8rem;color:var(--text-muted);"></div>
       </div>
       <div class="card territory-run-card" style="margin-bottom:1.25rem;">
@@ -1684,6 +1874,7 @@
         <svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
         <span>Главная</span>
       </button>
+      <!-- AI: вкладка убрана из меню до доработки. Страница id=page-ai и ai-mvp.js сохранены — верните кнопку с data-page="ai" между Главная и Рейтинг. -->
       <button type="button" class="bottom-nav-item" data-page="stats" aria-label="Рейтинги">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 17v-4h4v4H3zm6 0v-6h4v6H9zm6 0V7h4v10h-4z"/></svg>
         <span>Рейтинг</span>
@@ -1704,6 +1895,10 @@
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.16.0/dist/tf.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/mobilenet@2.1.1/dist/mobilenet.min.js"></script>
+  <script src="ai-local-food.js?v=3"></script>
+  <script src="ai-mvp.js"></script>
   <script>
     (function() {
       const DB_NAME = 'LevelUpTracker';
@@ -1751,14 +1946,57 @@
         });
       }
 
+      var LS_USERS = 'tracker_users';
+      var LS_DATA = 'tracker_data';
+      var LS_CURRENT = 'tracker_current_user';
+      var LS_TERR = 'tracker_territories';
+
+      function flushToLocalStorage() {
+        try {
+          localStorage.setItem(LS_USERS, JSON.stringify(cache.users || {}));
+          localStorage.setItem(LS_DATA, JSON.stringify(cache.userData || {}));
+          if (cache.currentUser) localStorage.setItem(LS_CURRENT, cache.currentUser);
+          else localStorage.removeItem(LS_CURRENT);
+          localStorage.setItem(LS_TERR, JSON.stringify(cache.territories || []));
+        } catch (e) {}
+      }
+
       function migrateFromLocalStorage() {
         try {
-          var rawU = localStorage.getItem('tracker_users');
-          var rawD = localStorage.getItem('tracker_data');
-          var rawC = localStorage.getItem('tracker_current_user');
+          var rawU = localStorage.getItem(LS_USERS);
+          var rawD = localStorage.getItem(LS_DATA);
+          var rawC = localStorage.getItem(LS_CURRENT);
+          var rawT = localStorage.getItem(LS_TERR);
           if (rawU) cache.users = JSON.parse(rawU);
           if (rawD) cache.userData = JSON.parse(rawD);
           if (rawC) cache.currentUser = rawC;
+          if (rawT) {
+            var arr = JSON.parse(rawT);
+            if (Array.isArray(arr)) cache.territories = arr;
+          }
+        } catch (e) {}
+      }
+
+      function mergeLocalIfIdbEmpty() {
+        try {
+          var rawU = localStorage.getItem(LS_USERS);
+          var rawD = localStorage.getItem(LS_DATA);
+          if (rawU && (!cache.users || Object.keys(cache.users).length === 0)) {
+            var pu = JSON.parse(rawU);
+            if (pu && Object.keys(pu).length > 0) cache.users = pu;
+          }
+          if (rawD && (!cache.userData || Object.keys(cache.userData).length === 0)) {
+            var pd = JSON.parse(rawD);
+            if (pd && Object.keys(pd).length > 0) cache.userData = pd;
+          }
+          if (localStorage.getItem(LS_CURRENT) && !cache.currentUser) {
+            cache.currentUser = localStorage.getItem(LS_CURRENT);
+          }
+          var rawT = localStorage.getItem(LS_TERR);
+          if (rawT && (!cache.territories || cache.territories.length === 0)) {
+            var ta = JSON.parse(rawT);
+            if (Array.isArray(ta) && ta.length > 0) cache.territories = ta;
+          }
         } catch (e) {}
       }
 
@@ -1777,21 +2015,24 @@
             if (vals[1]) cache.userData = vals[1];
             if (vals[2]) cache.currentUser = vals[2];
             if (vals[3] && Array.isArray(vals[3])) cache.territories = vals[3];
-            if (Object.keys(cache.users).length === 0 && Object.keys(cache.userData).length === 0) {
+            mergeLocalIfIdbEmpty();
+            if (Object.keys(cache.users || {}).length === 0 && Object.keys(cache.userData || {}).length === 0) {
               migrateFromLocalStorage();
-              return persistAll();
             }
-            return Promise.resolve();
+            flushToLocalStorage();
+            return persistAll();
           })
           .catch(function() {
             migrateFromLocalStorage();
+            flushToLocalStorage();
           });
       }
 
       function persistAll() {
+        flushToLocalStorage();
         return Promise.all([
-          idbSet('users', cache.users),
-          idbSet('userData', cache.userData),
+          idbSet('users', cache.users || {}),
+          idbSet('userData', cache.userData || {}),
           idbSet('currentUser', cache.currentUser),
           idbSet('territories', cache.territories || [])
         ]).catch(function() {});
@@ -1802,6 +2043,7 @@
       }
       function setTerritories(arr) {
         cache.territories = arr;
+        flushToLocalStorage();
         idbSet('territories', arr).catch(function() {});
       }
       var TERRITORY_DECAY_DAYS = 7;
@@ -1909,6 +2151,7 @@
 
       function saveUsers(users) {
         cache.users = users;
+        flushToLocalStorage();
         idbSet('users', users).catch(function() {});
       }
 
@@ -1943,6 +2186,7 @@
       function setUserData(username, data) {
         if (!cache.userData) cache.userData = {};
         cache.userData[username] = data;
+        flushToLocalStorage();
         idbSet('userData', cache.userData).catch(function() {});
       }
 
@@ -1952,6 +2196,7 @@
 
       function setCurrentUser(username) {
         cache.currentUser = username;
+        flushToLocalStorage();
         idbSet('currentUser', username).catch(function() {});
       }
 
@@ -1994,7 +2239,7 @@
         }
         authError.classList.add('hidden');
         setCurrentUser(username);
-        showApp();
+        persistAll().then(function() { showApp(); }).catch(function() { showApp(); });
       });
 
       document.getElementById('form-register').addEventListener('submit', function(e) {
@@ -2025,17 +2270,24 @@
         setUserData(username, { tasks: [], dailyDone: {}, monthAchievements: {}, dailySteps: {}, lastVisit: todayKey() });
         authError.classList.add('hidden');
         setCurrentUser(username);
-        showApp();
+        persistAll().then(function() { showApp(); }).catch(function() { showApp(); });
       });
 
       document.getElementById('btn-logout').addEventListener('click', function() {
         setCurrentUser(null);
-        appScreen.classList.add('hidden');
-        authScreen.classList.remove('hidden');
-        authError.textContent = 'Вы вышли. Данные сохранены на устройстве — войдите снова в любое время.';
-        authError.style.color = 'var(--accent)';
-        authError.style.background = 'var(--accent-light)';
-        authError.classList.remove('hidden');
+        persistAll().then(function() {
+          appScreen.classList.add('hidden');
+          authScreen.classList.remove('hidden');
+          authError.textContent = 'Вы вышли. Данные сохранены на устройстве — войдите снова в любое время.';
+          authError.style.color = 'var(--accent)';
+          authError.style.background = 'var(--accent-light)';
+          authError.classList.remove('hidden');
+        }).catch(function() {
+          appScreen.classList.add('hidden');
+          authScreen.classList.remove('hidden');
+          authError.textContent = 'Вы вышли.';
+          authError.classList.remove('hidden');
+        });
       });
 
       var btnRefresh = document.getElementById('btn-refresh');
@@ -2429,28 +2681,11 @@ function renderTerritoryMap() {
           });
         });
 
-        if (navigator.geolocation) {
-          navigator.geolocation.getCurrentPosition(
-            function(pos) {
-              var lat = pos.coords.latitude;
-              var lng = pos.coords.longitude;
-              if (territoryMapUserMarker && territoryMapInstance) territoryMapInstance.removeLayer(territoryMapUserMarker);
-              var myIcon = L.divIcon({ className: 'my-location-marker', html: '<div style="width:16px;height:16px;background:#c4ff0d;border:3px solid #fff;border-radius:50%;box-shadow:0 0 8px rgba(0,0,0,0.4);"></div>', iconSize: [22, 22], iconAnchor: [11, 11] });
-              territoryMapUserMarker = L.marker([lat, lng], { icon: myIcon }).addTo(territoryMapInstance);
-              territoryMapUserMarker.bindTooltip('Вы здесь', { permanent: false, direction: 'top' });
-              if (bounds) { bounds.extend([lat, lng]); territoryMapInstance.fitBounds(bounds, { padding: [40, 40], maxZoom: 16 }); }
-              else territoryMapInstance.setView([lat, lng], 15);
-            },
-            function() {
-              if (bounds) territoryMapInstance.fitBounds(bounds, { padding: [40, 40], maxZoom: 16 });
-              else territoryMapInstance.setView([55.75, 37.62], 13);
-            }
-          );
-        } else {
-          if (bounds) territoryMapInstance.fitBounds(bounds, { padding: [40, 40], maxZoom: 16 });
-          else territoryMapInstance.setView([55.75, 37.62], 13);
-        }
+        if (bounds) territoryMapInstance.fitBounds(bounds, { padding: [40, 40], maxZoom: 16 });
+        else territoryMapInstance.setView([55.75, 37.62], 13);
 
+        var statusEl = document.getElementById('map-location-status');
+        if (statusEl) statusEl.textContent = '';
         var legend = document.getElementById('territory-legend');
         if (legend) {
           if (territories.length > 0) {
@@ -2460,6 +2695,68 @@ function renderTerritoryMap() {
             legend.innerHTML = '<span style="display:inline-flex;align-items:center;gap:0.35rem;"><span style="width:10px;height:10px;background:#c4ff0d;border-radius:50%;border:2px solid #fff;"></span>Я здесь (включите GPS)</span>';
           }
         }
+      }
+
+      function updateMapWithMyLocation() {
+        var statusEl = document.getElementById('map-location-status');
+        if (typeof L === 'undefined') {
+          if (statusEl) statusEl.textContent = 'Карта не загрузилась. Проверьте интернет и обновите страницу.';
+          return;
+        }
+        if (!territoryMapInstance) {
+          renderTerritoryMap();
+        }
+        if (!territoryMapInstance) {
+          if (statusEl) statusEl.textContent = 'Не удалось открыть карту. Откройте вкладку «Бег» ещё раз.';
+          return;
+        }
+        if (statusEl) statusEl.textContent = 'Определяю местоположение…';
+        if (territoryMapInstance.invalidateSize) territoryMapInstance.invalidateSize();
+        var user = getCurrentUser();
+        var territories = getTerritories().filter(function(t) { return t.owner === user; });
+        var bounds = null;
+        territories.forEach(function(t) {
+          if (!t.points || t.points.length < 2) return;
+          t.points.forEach(function(p) {
+            if (!bounds) bounds = L.latLngBounds([p[0], p[1]], [p[0], p[1]]);
+            else bounds.extend([p[0], p[1]]);
+          });
+        });
+        if (!navigator.geolocation) {
+          if (statusEl) statusEl.textContent = 'Геолокация недоступна в этом браузере.';
+          return;
+        }
+        navigator.geolocation.getCurrentPosition(
+          function(pos) {
+            var lat = pos.coords.latitude;
+            var lng = pos.coords.longitude;
+            if (territoryMapUserMarker && territoryMapInstance) territoryMapInstance.removeLayer(territoryMapUserMarker);
+            var myIcon = L.divIcon({ className: 'my-location-marker', html: '<div style="width:16px;height:16px;background:#c4ff0d;border:3px solid #fff;border-radius:50%;box-shadow:0 0 8px rgba(0,0,0,0.4);"></div>', iconSize: [22, 22], iconAnchor: [11, 11] });
+            territoryMapUserMarker = L.marker([lat, lng], { icon: myIcon }).addTo(territoryMapInstance);
+            territoryMapUserMarker.bindTooltip('Вы здесь', { permanent: false, direction: 'top' });
+            if (bounds) { bounds.extend([lat, lng]); territoryMapInstance.fitBounds(bounds, { padding: [40, 40], maxZoom: 16 }); }
+            else territoryMapInstance.setView([lat, lng], 15);
+            if (statusEl) statusEl.textContent = '';
+          },
+          function(err) {
+            if (statusEl) {
+              if (err.code === 1) statusEl.textContent = 'Доступ к геолокации запрещён. Разрешите в настройках браузера или телефона.';
+              else if (err.code === 3) statusEl.textContent = 'Таймаут. Включите GPS и нажмите кнопку снова.';
+              else statusEl.textContent = 'Не удалось определить местоположение.';
+            }
+          },
+          { enableHighAccuracy: true, maximumAge: 0, timeout: 20000 }
+        );
+      }
+
+      var btnShowLocation = document.getElementById('btn-show-my-location');
+      if (btnShowLocation) {
+        btnShowLocation.addEventListener('click', function() {
+          setTimeout(function() {
+            if (territoryMapInstance && territoryMapInstance.invalidateSize) territoryMapInstance.invalidateSize();
+            updateMapWithMyLocation();
+          }, 50);
+        });
       }
 
       function renderRanking() {
@@ -2581,6 +2878,8 @@ function renderTerritoryMap() {
         var avatarRun = document.getElementById('header-avatar-run');
         if (avatarRun) avatarRun.textContent = letter;
         document.getElementById('header-avatar-activity').textContent = letter;
+        var avatarAi = document.getElementById('header-avatar-ai');
+        if (avatarAi) avatarAi.textContent = letter;
         if (pageId === 'stats') { renderRanking(); }
         if (pageId === 'activity') {
           document.getElementById('page-activity-streak').textContent = calculateStreak();
@@ -2589,6 +2888,9 @@ function renderTerritoryMap() {
         if (pageId === 'run') {
           if (typeof renderTerritoryMap === 'function') renderTerritoryMap();
           if (territoryMapInstance) setTimeout(function() { territoryMapInstance.invalidateSize(); }, 100);
+        }
+        if (pageId === 'ai' && typeof window.AiLocalFood !== 'undefined' && window.AiLocalFood.ensureMobilenet) {
+          window.AiLocalFood.ensureMobilenet().catch(function() {});
         }
       }
       function renderCalendarActivity() {
